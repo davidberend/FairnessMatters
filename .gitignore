@@ -1,2 +1,5 @@
 model_weights/
 datasets/
+pretrained_model/
+/utils/__pycache__
+/models/__pycache__

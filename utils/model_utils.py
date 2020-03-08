@@ -10,7 +10,6 @@ import urllib.request as urllib
 import json
 import re
 import matplotlib.pyplot as plt
-import cv2 as cv
 import argparse
 import pandas as pd
 from IPython.display import Image
@@ -18,18 +17,18 @@ from random import randint
 from torchvision import transforms
 import numpy as np
 import torchfile
-from img_set import Img_Dataset
+# from img_set import Img_Dataset
 
-def training_and_save_model(net, num_epochs, model_save_name):
+def training_and_save_model(net, num_epochs, model_save_name,device,dataloaders,lr):
     net = net.to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer=torch.optim.SGD(net.parameters(), lr)
-    net, _ = train_model(net, dataloaders, criterion, optimizer, num_epochs)
-    torch.save(net.state_dict(), os.path.join("./", model_save_name))
+    net = train_model(net, dataloaders, criterion, optimizer, num_epochs,device)
+    torch.save(net.state_dict(), os.path.join("./model_weights", model_save_name))
 
 
-def train_model(model, dataloaders, criterion, optimizer, num_epochs=25):
-    since = time.time()q
+def train_model(model, dataloaders, criterion, optimizer, num_epochs,device):
+    since = time.time()
     last = since
     time_elapsed = since
 
@@ -53,11 +52,11 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25):
             running_corrects = 0
 
             # Iterate over data.
-            i=0
+
             for inputs, labels in dataloaders[phase]:
                 inputs = inputs.to(device)
                 labels = labels.to(device)
-                i+=1
+
                 # print(i, end=' ')
                 # zero the parameter gradients
                 optimizer.zero_grad()
@@ -100,4 +99,4 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25):
             if phase == 'val':
                 val_acc_history.append(epoch_acc)
 
-        print()
+    return model

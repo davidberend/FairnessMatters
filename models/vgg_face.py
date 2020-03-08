@@ -4,13 +4,11 @@ import torch.nn.functional as F
 import torch.optim as optim
 import torchvision
 import matplotlib.pyplot as plt
-import cv2 as cv
 import argparse
 import pandas as pd
 from IPython.display import Image
 from random import randint
 from torchvision import transforms
-from google.colab import drive
 import numpy as np
 import torchfile
 
@@ -43,7 +41,7 @@ class VGG_16(nn.Module):
         self.fc8 = nn.Linear(4096, classes)
         # self.fc9 = nn.Linear(2622,classes)
 
-    def load_weights(self, path="/content/vgg_face_torch/VGG_FACE.t7"):
+    def load_weights(self, path="/vgg_face_torch/VGG_FACE.t7"):
         """ Function to load luatorch pretrained
         Args:
             path: path for the luatorch pretrained
