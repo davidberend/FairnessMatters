@@ -1,15 +1,16 @@
 from utils import data_utils
 from utils import model_utils
 from models import vgg_face
-from torchvision import transforms
+from torchvision import transforms, models
 import numpy as np
 import argparse
 import copy
 import torch
 import os
+import torch.nn as nn
 
 
-def train_model(train_X_path,train_y_path,test_X_path,test_y_path,version="Mega",batch_size=20,num_epochs=50,model_name="VGG-face",pretrained_path='./pretrained_model'):
+def train_model(train_X_path,train_y_path,test_X_path,test_y_path,num_classes,version="Mega",batch_size=20,num_epochs=50,model_name="VGG-face",pretrained_path='./pretrained_model'):
     device= torch.device("cuda")
     channels = 3
     img_pixels = (224,224)
@@ -38,8 +39,15 @@ def train_model(train_X_path,train_y_path,test_X_path,test_y_path,version="Mega"
         print("[+] Training for %s with binsize %d dataset started" % (version, binsize))
         # for input,label in dataloaders['test']:
             # print(label)
-        net = vgg_face.VGG_16(classes=classes)
-        net.load_weights(path=pretrained_path)
+        if model_name=='VGGface':
+            net = vgg_face.VGG_16(classes=classes)
+            net.load_weights(path=pretrained_path)
+        elif model_name=='densenet':
+            net = models.densenet121(pretrained=True)
+            # set_parameter_requires_grad(model_ft, feature_extract)
+            num_ftrs = net.classifier.in_features
+            net.classifier = nn.Linear(num_ftrs, classes)
+            # input_size = 224
         
         model_save_name = "%s_%s_demo_merged_train_bin%d" % (num_epochs, net.__class__.__name__, binsize)
         model_utils.training_and_save_model(net, num_epochs, model_save_name,device,dataloaders,lr)
@@ -59,7 +67,7 @@ if __name__=="__main__":
     parser.add_argument('-train_y_path', help='training labels', default='Mega_train_y.npy')
     parser.add_argument('-test_X_path', help='test samples', default='Mega_test_X.npy')
     parser.add_argument('-test_y_path', help='test labels', default='Mega_test_y.npy')
-    parser.add_argument('-model_name', help='model to be trained', default='VGG-face')
+    parser.add_argument('-model_name', help='model to be trained', default='VGGface')
     parser.add_argument('-version', help='version_of_model', default='Mega')
     parser.add_argument('-num_classes', type=int, help='number of classes', default=10)
     parser.add_argument('-pretrained', help='number of classes', default='./pretrained_model/vgg_face_torch/VGG_FACE.t7')
@@ -75,4 +83,4 @@ if __name__=="__main__":
     version = args.version
     num_classes = args.num_classes
 
-    train_model(train_X_path,train_y_path,test_X_path,test_y_path,version=version,num_epochs=args.num_epoches,pretrained_path=args.pretrained)
+    train_model(train_X_path,train_y_path,test_X_path,test_y_path,num_classes=num_classes,version=version,num_epochs=args.num_epoches,pretrained_path=args.pretrained,model_name=model_name)

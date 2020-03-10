@@ -17,17 +17,19 @@ from random import randint
 from torchvision import transforms
 import numpy as np
 import torchfile
+from torch.optim import lr_scheduler
 # from img_set import Img_Dataset
 
 def training_and_save_model(net, num_epochs, model_save_name,device,dataloaders,lr):
     net = net.to(device)
     criterion = nn.CrossEntropyLoss()
-    optimizer=torch.optim.SGD(net.parameters(), lr)
-    net = train_model(net, dataloaders, criterion, optimizer, num_epochs,device)
+    optimizer=torch.optim.SGD(net.parameters(), lr,momentum=0.9)
+    exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
+    net = train_model(net, dataloaders, criterion, optimizer, num_epochs,device,exp_lr_scheduler)
     torch.save(net.state_dict(), os.path.join("./model_weights", model_save_name))
 
 
-def train_model(model, dataloaders, criterion, optimizer, num_epochs,device):
+def train_model(model, dataloaders, criterion, optimizer, num_epochs,device,exp_lr_scheduler):
     since = time.time()
     last = since
     time_elapsed = since
@@ -81,8 +83,9 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs,device):
 
                 # statistics
                 running_loss += loss.item() * inputs.size(0)
-                
                 running_corrects += torch.sum(preds == labels.data)
+            if phase=='train':
+                exp_lr_scheduler.step()
 
             epoch_loss = running_loss / len(dataloaders[phase].dataset)
             epoch_acc = running_corrects.double() / len(dataloaders[phase].dataset)
@@ -93,10 +96,10 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs,device):
             print('{} Loss: {:.4f} Acc: {:.4f} Time: {:.0f}m {:.0f}s'.format(phase, epoch_loss, epoch_acc, time_elapsed // 60, time_elapsed % 60))
 
             # deep copy the modeltopk
-            if phase == 'val' and epoch_acc > best_acc:
+            if phase == 'test' and epoch_acc > best_acc:
                 best_acc = epoch_acc
                 best_model_wts = copy.deepcopy(model.state_dict())
-            if phase == 'val':
+            if phase == 'test':
                 val_acc_history.append(epoch_acc)
-
+    model.load_state_dict(best_model_wts)
     return model
