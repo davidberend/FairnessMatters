@@ -10,7 +10,7 @@ import os
 import torch.nn as nn
 
 
-def train_model(train_X_path,train_y_path,test_X_path,test_y_path,num_classes,version="Mega",batch_size=32,num_epochs=50,model_name="VGG-face",pretrained_path='./pretrained_model'):
+def train_model(train_X_path,train_y_path,test_X_path,test_y_path,num_classes,version="Mega",batch_size=32,num_epochs=50,model_name="VGG-face"):
     device= torch.device("cuda")
     channels = 3
     img_pixels = (224,224)
@@ -35,8 +35,7 @@ def train_model(train_X_path,train_y_path,test_X_path,test_y_path,num_classes,ve
         # for input,label in dataloaders['test']:
             # print(label)
         if model_name=='VGGface':
-            net = vgg_face.VGG_16(classes=classes)
-            # net.load_weights()
+            net = vgg_face.VGG_16(classes)
         elif model_name=='VGG':
             net=Generalmodels.VGG16(classes)
         elif model_name=='densenet':
@@ -58,14 +57,13 @@ if __name__=="__main__":
 
     parser.add_argument('-folder', help='base folder',
                         default='datasets')
-    parser.add_argument('-train_X_path', help='training samples', default='UTK_train_X_full.npy')
-    parser.add_argument('-train_y_path', help='training labels', default='UTK_train_y_full.npy')
-    parser.add_argument('-test_X_path', help='test samples', default='UTK_test_X_full.npy')
-    parser.add_argument('-test_y_path', help='test labels', default='UTK_test_y_full.npy')
+    parser.add_argument('-train_X_path', help='training samples', default='UTK_train_X_5yr.npy')
+    parser.add_argument('-train_y_path', help='training labels', default='UTK_train_y_5yr.npy')
+    parser.add_argument('-test_X_path', help='test samples', default='UTK_test_X_5yr.npy')
+    parser.add_argument('-test_y_path', help='test labels', default='UTK_test_y_5yr.npy')
     parser.add_argument('-model_name', help='model to be trained', default='VGG')
     parser.add_argument('-version', help='version_of_model', default='Mega')
     parser.add_argument('-num_classes', type=int, help='number of classes', default=10)
-    parser.add_argument('-pretrained', help='number of classes', default='./pretrained_model/vgg_face_torch/VGG_FACE.t7')
     parser.add_argument('-num_epoches', type=int, help='number of classes', default=100)
 
     args = parser.parse_args()
@@ -78,4 +76,4 @@ if __name__=="__main__":
     version = args.version
     num_classes = args.num_classes
 
-    train_model(train_X_path,train_y_path,test_X_path,test_y_path,num_classes=num_classes,version=version,num_epochs=args.num_epoches,pretrained_path=args.pretrained,model_name=model_name)
+    train_model(train_X_path,train_y_path,test_X_path,test_y_path,num_classes=num_classes,version=version,num_epochs=args.num_epoches,model_name=model_name)
