@@ -24,11 +24,9 @@ import torch
 import os
 import torch.nn as nn
 
-import argparse
 
 
-
-def train_model(train_X_path, train_y_path, test_X_path, test_y_path, batch_size=64,model_name = "resnet", num_classes=10, opt="sgd",dataset="UTK",num_epochs=100):
+def train_model(train_X_path, train_y_path, test_X_path, test_y_path, batch_size=128,model_name = "resnet", num_classes=10, opt="sgd",dataset="UTK",num_epochs=100,lr=0.01):
 
     # Configuration
     #cudnn.benchmark = True  # fire on all cylinders
@@ -38,7 +36,7 @@ def train_model(train_X_path, train_y_path, test_X_path, test_y_path, batch_size
     end_epoch = num_epochs
     opt = opt
     img_pixels=(224,224)
-    save_path = "./model_weights/trained_{}_{}_{}".format(model_name,dataset,opt)
+    save_path = "./model_weights/trained_{}_{}_{}_{}".format(model_name,dataset,opt,str(lr))
     model_type = "{}_{}".format(model_name, dataset)
 
     train_transform = trn.Compose([
@@ -49,17 +47,23 @@ def train_model(train_X_path, train_y_path, test_X_path, test_y_path, batch_size
 
     test_transform = trn.Compose([trn.ToTensor(),trn.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
 
-    train_set_X = np.load(train_X_path)
-    train_set_y = np.load(train_y_path)
-
-    test_set_X = np.load(test_X_path)
-    test_set_y = np.load(test_y_path)
-
-
-    train_loader = data_utils.make_dataloader(train_set_X, train_set_y, img_size=img_pixels, batch_size=batch_size,
+    if dataset!='IMDB':
+        train_set_X = np.load(train_X_path)
+        train_set_y = np.load(train_y_path)
+        test_set_X = np.load(test_X_path)
+        test_set_y = np.load(test_y_path)
+        train_loader = data_utils.make_dataloader(train_set_X, train_set_y, img_size=img_pixels, batch_size=batch_size,
                                    transform_test=train_transform, shuffle=True)
 
-    test_loader = data_utils.make_dataloader(test_set_X, test_set_y, img_size=img_pixels, batch_size=batch_size, transform_test=test_transform)
+        test_loader = data_utils.make_dataloader(test_set_X, test_set_y, img_size=img_pixels, batch_size=batch_size, transform_test=test_transform)
+    elif dataset=='IMDB':
+        train_set_X,train_set_y=data_utils.get_txt(train_X_path)
+        
+        test_set_X,test_set_y=data_utils.get_txt(test_X_path)
+        train_loader = data_utils.make_dataloader_iter(train_set_X, train_set_y, img_size=img_pixels, batch_size=batch_size,
+                                   transform_test=train_transform, shuffle=True)
+
+        test_loader = data_utils.make_dataloader_iter(test_set_X, test_set_y, img_size=img_pixels, batch_size=batch_size, transform_test=test_transform)
     
 
     if model_name=='VGGface':
@@ -80,7 +84,7 @@ def train_model(train_X_path, train_y_path, test_X_path, test_y_path, batch_size
     #     net.cuda()
 
     if opt == 'sgd':
-        optimizer = optim.SGD(net.parameters(), lr=1e-1, momentum=0.9, weight_decay=1e-4)
+        optimizer = optim.SGD(net.parameters(), lr=lr, momentum=0.9, weight_decay=1e-4)
     elif opt == 'adam':
         optimizer = optim.Adam(net.parameters(), weight_decay=1e-4)
     elif opt == 'rmsprop':
@@ -145,33 +149,45 @@ def train_model(train_X_path, train_y_path, test_X_path, test_y_path, batch_size
         state['test_accuracy'])
         )
 
-if __name__=="__main__":
+# if __name__=="__main__":
 
-    parser = argparse.ArgumentParser(description='control experiment')
+#     parser = argparse.ArgumentParser(description='control experiment')
 
-    parser.add_argument('-folder', help='base folder',
-                        default='datasets')
-    parser.add_argument('-train_X_path', help='training samples', default='UTK_train_X_5yr.npy')
-    parser.add_argument('-train_y_path', help='training labels', default='UTK_train_y_5yr.npy')
-    parser.add_argument('-test_X_path', help='test samples', default='UTK_test_X_5yr.npy')
-    parser.add_argument('-test_y_path', help='test labels', default='UTK_test_y_5yr.npy')
-    parser.add_argument('-model_name', help='model to be trained', default='VGG')
-    parser.add_argument('-dataset', help='version_of_model', default='Mega')
-    parser.add_argument('-num_classes', type=int, help='number of classes', default=10)
-    parser.add_argument('-opt', type=str, help='choose optimizer', default="sgd")
-    parser.add_argument('-num_epoches', type=int, help='number of classes', default=100)
+#     parser.add_argument('-folder', help='base folder',
+#                         default='datasets')
+#     parser.add_argument('-train_X_path', help='training samples', default='UTK_train_X_5yr.npy')
+#     parser.add_argument('-train_y_path', help='training labels', default='UTK_train_y_5yr.npy')
+#     parser.add_argument('-test_X_path', help='test samples', default='UTK_test_X_5yr.npy')
+#     parser.add_argument('-test_y_path', help='test labels', default='UTK_test_y_5yr.npy')
+#     parser.add_argument('-model_name', help='model to be trained', default='VGG')
+#     parser.add_argument('-dataset', help='version_of_model', default='Mega')
+#     parser.add_argument('-num_classes', type=int, help='number of classes', default=10)
+#     parser.add_argument('-opt', type=str, help='choose optimizer', default="sgd")
+#     parser.add_argument('-num_epoches', type=int, help='number of classes', default=100)
+#     parser.add_argument('-lr', type=float, help='learning rate', default=0.01)
 
-    args = parser.parse_args()
+#     args = parser.parse_args()
 
-    train_X_path = os.path.join(args.folder, args.train_X_path)
-    train_y_path = os.path.join(args.folder, args.train_y_path)
-    test_X_path = os.path.join(args.folder, args.test_X_path)
-    test_y_path = os.path.join(args.folder, args.test_y_path)
+#     train_X_path = os.path.join(args.folder, args.train_X_path)
+#     train_y_path = os.path.join(args.folder, args.train_y_path)
+#     test_X_path = os.path.join(args.folder, args.test_X_path)
+#     test_y_path = os.path.join(args.folder, args.test_y_path)
 
-    model_name = args.model_name
-    dataset = args.dataset
-    num_classes = args.num_classes
-    opt = args.opt
-
-    train_model(train_X_path, train_y_path, test_X_path, test_y_path, model_name=model_name,
-                num_classes=num_classes, opt=opt,dataset=dataset,num_epochs=args.num_epoches)
+#     model_name = args.model_name
+#     dataset = args.dataset
+#     num_classes = args.num_classes
+#     opt = args.opt
+#     lr=args.lr
+#     num_epoches=args.num_epoches
+train_X_path='/content/drive/My Drive/Colab Notebooks/AIBias/datasets/train_x.txt'
+train_y_path='/content/drive/My Drive/Colab Notebooks/AIBias/datasets/train_y.txt'
+test_X_path='/content/drive/My Drive/Colab Notebooks/AIBias/datasets/test_x.txt'
+test_y_path='/content/drive/My Drive/Colab Notebooks/AIBias/datasets/test_y.txt'
+model_name='resnet'
+num_classes=15
+opt='sgd'
+dataset='IMDB'
+num_epoches=10
+lr=0.01
+train_model(train_X_path, train_y_path, test_X_path, test_y_path, model_name=model_name,
+                num_classes=num_classes, opt=opt,dataset=dataset,num_epochs=num_epoches,lr=lr)
