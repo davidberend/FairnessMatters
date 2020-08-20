@@ -54,10 +54,12 @@ Ethnicity specific perception on SOTA
   <tr align='center'>
     <td><img src="./results/Analysys_human_perception.png" width="400px"/></td>
     <td><img src="./results/Analysys_DEX_perception.png" width="400px"/></td>
+    <td><img src="./results/Analysys_Ours_perception.png" width="400px"/></td>
   </tr>
   <tr align='center'>
     <td>Human</td>
     <td>DEX</td>
+    <td>Ours</td>
   </tr>
 </table>
 
@@ -82,16 +84,16 @@ Balanced testset evaluation on SOTA
         <td rowspan='2'>Industry</td>
         <td>AWS</td>
         <td>10.57</td>
-        <td>5.55\%</td>
-        <td>16.89\%</td>
+        <td>5.55%</td>
+        <td>16.89%</td>
         <td>-7.68</td>
         <td>0.25 </td>
     </tr>
     <tr align='center'>
         <td>Azure</td>
         <td>6.39</td>
-        <td>6.91\%</td>
-        <td>20.30\%</td>
+        <td>6.91%</td>
+        <td>20.30%</td>
         <td>-2.45</td>
         <td>0.29 </td>
     </tr>
@@ -99,25 +101,33 @@ Balanced testset evaluation on SOTA
         <td rowspan='2'>Academia</td>
         <td>Baseline</td>
         <td>18.01</td>
-        <td>2.21\%</td>
-        <td>6.31\%</td>
+        <td>2.21%</td>
+        <td>6.31%</td>
         <td>-6.26</td>
         <td>0.32 </td>
     </tr>
     <tr align='center'>
         <td>DEX</td>
         <td>7.70</td>
-        <td>6.17\%</td>
-        <td>20.07\%</td>
+        <td>6.17%</td>
+        <td>20.07%</td>
         <td>0.78</td>
         <td>0.18</td>
     </tr>
     <tr align='center'>
         <td colspan='2'>Human Study</td>
         <td>5.26</td>
-        <td>10.75\%</td>
-        <td>24.52\%</td>
+        <td>10.75%</td>
+        <td>24.52%</td>
         <td>-0.10</td>
         <td>0.20 </td>
+    </tr>
+    <tr align='center'>
+        <td colspan='2'>Ours</td>
+        <td>3.39</td>
+        <td>37.91%</td>
+        <td>50.28%</td>
+        <td>0.67</td>
+        <td>0.89 </td>
     </tr>
 </table>
