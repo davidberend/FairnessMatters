@@ -35,11 +35,32 @@ Comparison of enhancement approach to SOTA and human perception:
 
 Ethnicity specific perception on SOTA
 <center class="half">
-    <img src="./results/Analysys_alexnet_perception.png" width="18%"/><img src="./results/Analysys_aws_perception.png" width="20%"/><img src="./results/Analysys_azure_perception.png" width="20%"/>
-    <img src="./results/Analysys_human_perception.png" width="20%"/>
-    <img src="./results/Analysys_DEX_perception.png" width="20%"/>
+    <img src="./results/Analysys_alexnet_perception.png" width="33%"/><img src="./results/Analysys_aws_perception.png" width="33%"/><img src="./results/Analysys_azure_perception.png" width="33%"/><img src="./results/Analysys_human_perception.png" width="33%"/><img src="./results/Analysys_DEX_perception.png" width="33%"/>
     <p></p>
 </center>
+
+
+<table style="width:100%; table-layout:fixed;">
+  <tr align='center'>
+    <td><img src="./results/Analysys_alexnet_perception.png" width="200px"/></td>
+    <td><img src="./results/Analysys_aws_perception.png" width="200px"/></td>
+    <td><img src="./results/Analysys_azure_perception.png" width="200px"/></td>
+  </tr>
+  <tr align='center'>
+    <td>No padding, no strides</td>
+    <td>Arbitrary padding, no strides</td>
+    <td>Half padding, no strides</td>
+  </tr>
+  <tr align='center'>
+    <td><img src="./results/Analysys_human_perception.png" width="200px"/></td>
+    <td><img src="./results/Analysys_DEX_perception.png" width="200px"/></td>
+  </tr>
+  <tr align='center'>
+    <td>No padding, strides</td>
+    <td>Padding, strides</td>
+  </tr>
+</table>
+
 
 OOD-Scores for Banalced DNN model:
 <center><img src="./results/fig_PretrainedBalanced_races_60.png" width='70%'></center>
