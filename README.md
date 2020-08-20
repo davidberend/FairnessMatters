@@ -34,10 +34,10 @@ Comparison of enhancement approach to SOTA and human perception:
 <img src="./results/Analysis_comp_perception.png">
 
 Ethnicity specific perception on SOTA
-<center class="half">
+<!-- <center class="half">
     <img src="./results/Analysys_alexnet_perception.png" width="33%"/><img src="./results/Analysys_aws_perception.png" width="33%"/><img src="./results/Analysys_azure_perception.png" width="33%"/><img src="./results/Analysys_human_perception.png" width="33%"/><img src="./results/Analysys_DEX_perception.png" width="33%"/>
     <p></p>
-</center>
+</center> -->
 
 
 <table style="width:100%; table-layout:fixed;">
