@@ -42,22 +42,22 @@ Ethnicity specific perception on SOTA
 
 <table style="width:100%; table-layout:fixed;">
   <tr align='center'>
-    <td><img src="./results/Analysys_alexnet_perception.png" width="200px"/></td>
-    <td><img src="./results/Analysys_aws_perception.png" width="200px"/></td>
-    <td><img src="./results/Analysys_azure_perception.png" width="200px"/></td>
+    <td><img src="./results/Analysys_alexnet_perception.png" width="400px"/></td>
+    <td><img src="./results/Analysys_aws_perception.png" width="400px"/></td>
+    <td><img src="./results/Analysys_azure_perception.png" width="400px"/></td>
   </tr>
   <tr align='center'>
-    <td>No padding, no strides</td>
-    <td>Arbitrary padding, no strides</td>
-    <td>Half padding, no strides</td>
+    <td>AlexNet</td>
+    <td>AWS</td>
+    <td>Azure</td>
   </tr>
   <tr align='center'>
-    <td><img src="./results/Analysys_human_perception.png" width="200px"/></td>
-    <td><img src="./results/Analysys_DEX_perception.png" width="200px"/></td>
+    <td><img src="./results/Analysys_human_perception.png" width="400px"/></td>
+    <td><img src="./results/Analysys_DEX_perception.png" width="400px"/></td>
   </tr>
   <tr align='center'>
-    <td>No padding, strides</td>
-    <td>Padding, strides</td>
+    <td>Human</td>
+    <td>DEX</td>
   </tr>
 </table>
 
