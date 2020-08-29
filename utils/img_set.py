@@ -47,7 +47,9 @@ class Img_Dataset_Iter(Dataset):
             img = Image.open(cur_img_arr)
             if img.mode=='L':
               img=img.convert("RGB")
-            return img.resize(img_size)
+            newimg=img.resize(img_size)
+            img.load()
+            return newimg
         self.load_image = load_image
     
     def __getitem__(self,index):

@@ -1,7 +1,17 @@
+
+from utils.train_utils import train_baseline,test,adjust_opt
+import torch.backends.cudnn as cudnn
+import torchvision.transforms as trn
+from collections import defaultdict
+import os
+import sys
 from utils import data_utils
 from utils import model_utils
 from models import vgg_face,Generalmodels
-from torchvision import transforms, models
+import torch.optim.lr_scheduler
+import time
+import torch.optim as optim
+from torchvision import models
 import numpy as np
 import argparse
 import copy
@@ -9,71 +19,156 @@ import torch
 import os
 import torch.nn as nn
 
+def train_model(train_path, test_path, batch_size=32, model_name = "resnet", opt="sgd",dataset="UTK",num_epochs=100,lr=0.01,
+                pretrain=False,trained_model=None):
+    # Configuration
+    state = defaultdict()
+    opt = opt
+    img_pixels=(224,224)
 
-def train_model(train_X_path,train_y_path,test_X_path,test_y_path,num_classes,version="Mega",batch_size=32,num_epochs=50,model_name="VGG-face"):
-    device= torch.device("cuda")
-    channels = 3
-    img_pixels = (224,224)
-    lr = 0.001
-    transform = transforms.Compose([
-        transforms.RandomResizedCrop(224),
-        transforms.Resize(img_pixels),
-        transforms.ToTensor(),
-        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
-
-    for binsize in [1]:
-        classes = num_classes
-        samples=np.load(train_X_path)
-        labels=np.load(train_y_path)
-        testsamples=np.load(test_X_path)
-        testlabels=np.load(test_y_path)
-        dataloaders={}
-        dataloaders['train'] = data_utils.make_dataloader(samples,labels,img_size=img_pixels,batch_size=batch_size,transform_test=transform,shuffle=True)
-        dataloaders['test'] = data_utils.make_dataloader(testsamples,testlabels,img_size=img_pixels,batch_size=batch_size,transform_test=transform,shuffle=True)
+    # loading data
+    test_set_X,test_set_y,_=data_utils.process_data(test_path)
+    train_set_X,train_set_y,num_classes=data_utils.process_data(train_path)
+    train_transform = trn.Compose([
+        trn.ToTensor(),
+        trn.Normalize([0.550,0.500,0.483], [0.273,0.265,0.266])])
+    test_transform = trn.Compose([
+        trn.ToTensor(),
+        trn.Normalize([0.550,0.500,0.483], [0.273,0.265,0.266])])
+    train_loader = data_utils.make_dataloader_iter(train_set_X, train_set_y, img_size=img_pixels, batch_size=batch_size,
+                                   transform_test=train_transform, shuffle=True)
+    test_loader = data_utils.make_dataloader_iter(test_set_X, test_set_y, img_size=img_pixels, 
+                                batch_size=batch_size, transform_test=test_transform)
     
-        print("[+] Training for %s with %s dataset started" % (model_name,version))
-        # for input,label in dataloaders['test']:
-            # print(label)
-        if model_name=='VGGface':
-            net = vgg_face.VGG_16(classes)
-        elif model_name=='VGG':
-            net=Generalmodels.VGG16(classes)
-        elif model_name=='densenet':
-            net = Generalmodels.densenet121(classes)
-        elif model_name=='resnet':
-            net = Generalmodels.resnet50(classes)
+    # For pre-train and fine-tune
+    if pretrain:
+        train_set_X,train_set_y,num_classes=data_utils.process_data(train_path)
+        save_path = "./model_weights/pretrained/{}_{}_{}".format(model_name,opt,str(lr))
+    else:
+        num_classes=100
+        save_path = "./model_weights/{}/{}_{}_{}_{}".format(test_path.split('/')[-2],model_name,dataset,opt,str(lr))
+    model_type = "{}_{}".format(model_name, dataset)
+    print('Using Data: ',train_path)
+
+    # Initializating model
+    print("num_classes: ",num_classes)
+    if model_name=='VGG':
+        net=Generalmodels.VGG16(num_classes,pretrain, trained_model,if_test=False)
+    elif model_name=='resnet50':
+        net = Generalmodels.resnet50(num_classes,pretrain, trained_model,if_test=False)
+    elif model_name=='densenet121':
+        net = Generalmodels.densenet121(num_classes,pretrain, trained_model,if_test=False)
+    elif model_name=='alexnet':
+        net = Generalmodels.alexnet(num_classes,pretrain, trained_model,if_test=False)
+    
+    device=torch.device("cuda")
+    net=net.to(device)
+
+    # Defining opt method
+    if opt == 'sgd':
+        optimizer = optim.SGD(net.parameters(), lr=lr, momentum=0.9, weight_decay=5e-4)
+    elif opt == 'adam':
+        optimizer = optim.Adam(net.parameters(), lr=lr,weight_decay=5e-4)
         
-        model_save_name = model_name+version+"full_image"
-        model_utils.training_and_save_model(net, num_epochs, model_save_name,device,dataloaders,lr)
+    # Create results saving path
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
+    if not os.path.isdir(save_path):
+        raise Exception('%s is not a dir' % save_path)
+    with open(os.path.join(save_path,  '{}_training_results.csv'.format(model_type)), 'w') as f:
+        f.write('epoch,time(s),train_loss,train_acc,test_loss,test_acc(%),test_mae\n')
+    print('Beginning Training for {} on {}\n'.format(model_name,dataset))
 
-        print("[+] Training for %s with %s dataset completed" % (model_name,version))
+    # Main loop
+    best_epoch = 0
+    best_acc = 0.0
+    for epoch in range(num_epochs):
+        adjust_opt(opt, optimizer, epoch,lr)
+        state['epoch'] = epoch
+        begin_epoch = time.time()
 
-        del net 
+        # Train and Test
+        train_baseline(net,train_loader,optimizer,state)
+        test(net,test_loader,state)
+         # Save model
+        if epoch==0:
+            best_epoch = epoch
+            best_acc = state['test_accuracy']
+            cur_save_path = os.path.join(save_path, '{}_epoch_{}_{}.pt'.format(model_type,best_epoch,best_acc))
+            torch.save(net.state_dict(),cur_save_path)
+        cur_acc = state['test_accuracy']
+        if cur_acc > best_acc:
+            cur_save_path = os.path.join(save_path, '{}_epoch_{}_{}.pt'.format(model_type,epoch,cur_acc))
+            torch.save(net.state_dict(),cur_save_path)
+            prev_path = os.path.join(save_path, '{}_epoch_{}_{}.pt'.format(model_type,best_epoch,best_acc))
+            if os.path.exists(prev_path): 
+                os.remove(prev_path)
+            best_epoch = epoch
+            best_acc = cur_acc
+              
+        # Save results
+        with open(os.path.join(save_path,  '{}_training_results.csv'.format(model_type)), 'a') as f:
+            f.write('%03d,%05d,%0.6f,%0.4f,%0.6f,%0.4f,%0.4f\n' % (
+                (epoch + 1),
+                time.time() - begin_epoch,
+                state['train_loss'],
+                state['train_accuracy'],
+                state['test_loss'],
+                state['test_accuracy'],
+                state['mae']
+            ))
 
+        # Print results 
+        print('|Epoch {0:3d} | Time {1:5d} | Train Loss {2:.4f}|  Train Acc {3:.4f} | Test Loss {4:.4f} | Test Acc {5:.4f}'.format(
+        (epoch + 1),
+        int(time.time() - begin_epoch),
+        state['train_loss'],
+        state['train_accuracy'],
+        state['test_loss'],
+        state['test_accuracy'])
+        )
 
 if __name__=="__main__":
 
     parser = argparse.ArgumentParser(description='control experiment')
 
-    parser.add_argument('-folder', help='base folder',
-                        default='datasets')
-    parser.add_argument('-train_X_path', help='training samples', default='UTK_train_X_5yr.npy')
-    parser.add_argument('-train_y_path', help='training labels', default='UTK_train_y_5yr.npy')
-    parser.add_argument('-test_X_path', help='test samples', default='UTK_test_X_5yr.npy')
-    parser.add_argument('-test_y_path', help='test labels', default='UTK_test_y_5yr.npy')
-    parser.add_argument('-model_name', help='model to be trained', default='VGG')
-    parser.add_argument('-version', help='version_of_model', default='Mega')
-    parser.add_argument('-num_classes', type=int, help='number of classes', default=10)
+    parser.add_argument('-datafolder', help='data folder',default='datasets')
+    parser.add_argument('-train_path', help='training samples', default='UTK_train_info_5yr.txt')
+    parser.add_argument('-test_path', help='test samples', default='UTK_test_info_5yr.txt')
+    parser.add_argument('-model_name', help='model to be trained', default='resnet')
+    parser.add_argument('-dataset', help='dataset to be trained', default='UTK')
+    parser.add_argument('-opt', type=str, help='choose optimizer', default="sgd")
     parser.add_argument('-num_epoches', type=int, help='number of classes', default=100)
-
+    parser.add_argument('-lr', type=float, help='learning rate', default=0.001)
+    parser.add_argument('-pretrain',action='store_true',help='if this is a pretraining procedure')
+    parser.add_argument('-trained_model',type=str,help='The pre-trained model')
+    
     args = parser.parse_args()
-    train_X_path = os.path.join(args.folder, args.train_X_path)
-    train_y_path = os.path.join(args.folder, args.train_y_path)
-    test_X_path = os.path.join(args.folder, args.test_X_path)
-    test_y_path = os.path.join(args.folder, args.test_y_path)
+
+    train_path = os.path.join(args.datafolder, args.train_path)
+    test_path = os.path.join(args.datafolder, args.test_path)
 
     model_name = args.model_name
-    version = args.version
-    num_classes = args.num_classes
+    dataset = args.dataset
+    opt = args.opt
+    lr=args.lr
+    num_epoches=args.num_epoches
+    pretrain=args.pretrain
+    trained_model=args.trained_model
 
-    train_model(train_X_path,train_y_path,test_X_path,test_y_path,num_classes=num_classes,version=version,num_epochs=args.num_epoches,model_name=model_name)
+    # Checking the existance of pre-trained model
+    if not pretrain:
+        if not os.path.exists(trained_model):
+            raise FileExistsError("Pretrained Model does not exiset!")
+        if trained_model.split('/')[-1].split('_')[1]!=model_name:
+            raise ValueError("Model name does not match the pre-trained model!")
+    lists=os.listdir(trained_model)
+    
+    # Getting the path of the pre-trained model
+    for i in lists:
+        if i.split('.')[-1]=='pt':
+            trained_model=os.path.join(trained_model,i)
+    
+    # Train
+    train_model(train_path, test_path, model_name=model_name,
+    opt=opt,dataset=dataset,num_epochs=num_epoches,lr=lr,pretrain=pretrain,trained_model=trained_model)
