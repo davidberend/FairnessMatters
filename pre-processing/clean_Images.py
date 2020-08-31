@@ -7,68 +7,7 @@ import argparse
 from collections import defaultdict
 import pandas as pd
 import face_recognition
-
-# Get the raw of the datasets
-def getMegaageData(data_folder):
-    allinformation=[]
-    for filename in ['train','test']:
-      ages=open(data_folder+'/megaage/list/'+filename+'_age.txt','r')
-      imagenames=open(data_folder+'/megaage/list/'+filename+'_name.txt','r')
-      for lines in open(data_folder+'/megaage/list/'+filename+'_age.txt','r'):
-          allinformation.append(
-            {
-                'image_path':data_folder+'/megaage/'+filename+'/'+imagenames.readline().strip(),
-                'age':int(ages.readline().strip())
-            }
-        )
-    return allinformation
-
-def getUTKdata(data_folder):
-    images=os.listdir(data_folder+'/UTKFace')
-    allinformation=[]
-    for image in images:
-        information=image.split('_')
-        allinformation.append(
-            {
-            'image_path':data_folder+'/UTKFace/'+image,
-            'age':int(information[0]),# first term is age
-            'gender':information[1],#second term is gender
-            'race':information[2]#, #third term is race
-            }
-        )
-    return allinformation
-
-def getWIKI(wikiinfo,data_folder):
-    allinformation=[]
-    for i in range(len(wikiinfo['wiki'][0][0][3][0])):
-        if int(wikiinfo['wiki'][0][0][2][0][i][0].split('_')[2].split('.')[0])-\
-        int(wikiinfo['wiki'][0][0][2][0][i][0].split('_')[1].split('-')[0])<0 or\
-        int(wikiinfo['wiki'][0][0][2][0][i][0].split('_')[2].split('.')[0])-\
-        int(wikiinfo['wiki'][0][0][2][0][i][0].split('_')[1].split('-')[0])>100:
-            continue
-        allinformation.append(
-        {
-        'image_path':data_folder+'/wiki_crop/'+wikiinfo['wiki'][0][0][2][0][i][0],
-        'age':int(wikiinfo['wiki'][0][0][2][0][i][0].split('_')[2].split('.')[0])-int(wikiinfo['wiki'][0][0][2][0][i][0].split('_')[1].split('-')[0]),
-        'gender':wikiinfo['wiki'][0][0][3][0][i]
-        })
-    return allinformation
-
-def getIMDB(imdbinfo,data_folder):
-    allinformation=[]
-    for i in range(len(imdbinfo['imdb'][0][0][3][0])):
-        if int(imdbinfo['imdb'][0][0][2][0][i][0].split('_')[3].split('.')[0])-\
-        int(imdbinfo['imdb'][0][0][2][0][i][0].split('_')[2].split('-')[0])<0 or\
-        int(imdbinfo['imdb'][0][0][2][0][i][0].split('_')[3].split('.')[0])-\
-        int(imdbinfo['imdb'][0][0][2][0][i][0].split('_')[2].split('-')[0])>100:
-            continue
-        allinformation.append(
-        {
-        'image_path':data_folder+'/imdb_crop/'+imdbinfo['imdb'][0][0][2][0][i][0],
-        'age':int(imdbinfo['imdb'][0][0][2][0][i][0].split('_')[3].split('.')[0])-int(imdbinfo['imdb'][0][0][2][0][i][0].split('_')[2].split('-')[0]),
-        'gender':imdbinfo['imdb'][0][0][3][0][i]
-        })
-    return allinformation
+from get_raw_data import getUTKdata, getMORPHdata, getAPPAdata, getMegaasianData, getFGNETdata, getIMDB, getWIKI
 
 # Get the raw of the datasets
 def get_raw_information(data_folder):
@@ -80,10 +19,9 @@ def get_raw_information(data_folder):
     IMDB=getIMDB(imdbinfo,data_folder)
     return [Mega,UTK,WIKI,IMDB]
 
-if __name__=="__main__":
-
+def main(data_folder):
     # Load all datasets
-    datasets=get_raw_information('/home/david/aibias/OriDatasets')
+    datasets=get_raw_information(data_folder)
 
     # Remove the bad images which contains nothing
     exceptions=open('exceptions.txt','w')
@@ -106,5 +44,18 @@ if __name__=="__main__":
             if (not face_locations) or len(face_locations)>1:
                 os.remove(images['image_path'])
                 NoOrMoreFaces.write(images['image_path']+'\n')
+
+if __name__=="__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-dir', type=str, default='/mnt/nvme/aibias/OriDatasets/')
+    args = parser.parse_args()
+    data_folder = args.dir
+    main(data_folder)
+
+    
+    
+
+    
+
 
 
