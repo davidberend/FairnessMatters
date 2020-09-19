@@ -12,6 +12,7 @@ import copy
 import random
 import json
 import time
+import math
 
 from get_raw_data import getUTKdata, getMORPHdata, getAPPAdata, getMegaasianData, getFGNETdata, getIMDB, getWIKI
  
@@ -83,51 +84,99 @@ def getMinMaxSample(num_sample):
     max_sample = 0
     min_sample = np.inf
     for key in num_sample:
-        max_sample = max(max_sample,np.quantile(num_sample[key].values(),0.8))
-        min_sample = min(min_sample,np.quantile(num_sample[key].values(),0.2))
+        max_sample = max(max_sample,np.quantile(list(num_sample[key].values()),0.8))
+        min_sample = min(min_sample,np.quantile(list(num_sample[key].values()),0.2))
     return min_sample, max_sample
 
-def getBalancedData():
-    
+def update(select_size, threshold):
+    threshold -= num
+    ds_num -= 1
+    if ds_num!=0:
+        select_size = math.ceil(threshold*1.0/ds_num)
+    else:
+        select_size = threshold
+    return select_size, threshold
+
+def getBalancedData(data_folder):
+    dataset_names = ['UTKdata','Megaasian','APPA','MORPH']
     # Get all four datasets
     alldatasets = {
-    'UTKdata':getUTKdata(data_folder),
-    'Megaasian': getMegaasianData(data_folder),
-    'APPA': getAPPAdata(data_folder),
-    'MORPH': getMORPHdata(data_folder)
+        'UTKdata':getUTKdata(data_folder),
+        'Megaasian': getMegaasianData(data_folder),
+        'APPA': getAPPAdata(data_folder),
+        'MORPH': getMORPHdata(data_folder)
     }
-
-    datasets = {
+    single_num_samples = {
+        'caucasian':{i:0 for i in dataset_names},
+        'afroamerican':{i:0 for i in dataset_names},
+        'asian':{i:0 for i in dataset_names}
+    }
+    dataset_samples = {
+        i:copy.deepcopy(single_num_samples) for i in range(1,101)
+    }
+    # num = dataset_samples[2]['caucasian']['UTKdata']
+    single_samples = {
         'caucasian':defaultdict(list),
         'afroamerican':defaultdict(list),
         'asian':defaultdict(list)
     }
 
-    # Number of samples for each ethnicity in each age
-    num_sample = {
-        'caucasian':defaultdict(int),
-        'afroamerican':defaultdict(int),
-        'asian':defaultdict(int)
+    all_samples = {
+        'UTKdata':copy.deepcopy(single_samples),
+        'Megaasian': copy.deepcopy(single_samples),
+        'APPA': copy.deepcopy(single_samples),
+        'MORPH': copy.deepcopy(single_samples)
     }
 
-    for data in alldatasets:
-        for samples in tqdm(alldatasets[data]):
-            if 1<=samples['age']<=101 and samples['race'] in ['caucasian','afroamerican','asian']:
-                datasets[samples['race']][samples['age']].append([samples['image_path'],samples['age'],samples['race'],samples['gender']])
+    # Number of samples for each ethnicity in each age
+    num_sample = {
+        'caucasian':{i:0 for i in range(1,101)},
+        'afroamerican':{i:0 for i in range(1,101)},
+        'asian':{i:0 for i in range(1,101)}
+    }
+
+    for dataset in alldatasets:
+        for samples in tqdm(alldatasets[dataset]):
+            if 1<=samples['age']<=100 and samples['race'] in ['caucasian','afroamerican','asian']:
+                all_samples[dataset][samples['race']][samples['age']].append([samples['image_path'],samples['age'],samples['race'],samples['gender']])
+                dataset_samples[samples['age']][samples['race']][dataset]+=1
                 num_sample[samples['race']][samples['age']]+=1
 
     for key in num_sample:
         samples = copy.deepcopy(num_sample[key])
         num_sample[key] = dict(sorted(samples.items(), key=lambda samples:samples[1]))
 
-    min_threshold,max_threshold = getMinMaxSample(num_sample)
+    min_sample , max_sample = getMinMaxSample(num_sample)
 
-    # for age in 
+    balancedData = []
+
+    for age in range(1,101):
+        threshold = np.inf
+        for race in num_sample:
+            threshold = min(threshold,num_sample[race][age])
+        threshold = int(min(max_sample,max(min_sample,threshold)))
+        ds_num = len(alldatasets)
+        select_size = math.ceil(threshold*1.0/ds_num)
+        for race in num_sample:
+            ds_num = len(alldatasets)
+            race_num_sample = copy.deepcopy(dataset_samples[age][race])
+            dataset_samples[age][race] = dict(sorted(race_num_sample.items(), key=lambda race_num_sample:race_num_sample[1]))
+            for dataset in alldatasets:
+                num = dataset_samples[age][race][dataset]
+                if num < select_size:
+                    for sample in all_samples[dataset][race][age]:
+                        balancedData.append(sample)
+                    select_size, threshold = update(select_size, threshold)
+                else:
+                    indices = np.random.choice(len(all_samples[dataset][race][age]),select_size,replace=False)
+                    for index in indices:
+                        balancedData.append(all_samples[dataset][race][age][index])
+    print(len(balancedData))
     return 
 
 
 def main(data_folder):
-    getAlldata(data_folder)
+    getBalancedData(data_folder)
     
 
 if __name__ == '__main__':
@@ -140,4 +189,4 @@ if __name__ == '__main__':
     data_folder = args.dir
     train_save_path = args.train_save_path
     test_save_path = args.test_save_path
-    main(data_folder, train_save_path, test_save_path)
+    main(data_folder)
