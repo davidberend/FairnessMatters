@@ -14,7 +14,7 @@ BrightBlue='#aae6f0'
 Orange='#FF7828'
 Green= '#009926'
 
-def visualize_distribution(in_dist, out_dist, model_type, data_type, k):
+def visualize_distribution(in_dist, out_dist, k):
 
     in_dist = in_dist.detach().cpu().numpy()
     out_dist = out_dist.detach().cpu().numpy()
@@ -24,7 +24,7 @@ def visualize_distribution(in_dist, out_dist, model_type, data_type, k):
     plt.xlim((-1000,1000))
     plt.show()
 
-def visualize_distribution_race(dists, model_type, data_type, k, out=False):
+def visualize_distribution_race(dists, k, out=False):
     colors={
         'asian':DarkBlue,
         'caucasian':LightBlue,

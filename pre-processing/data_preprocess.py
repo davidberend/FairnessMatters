@@ -81,21 +81,21 @@ def getAlldata(data_folder, train_save_path, test_save_path):
     print(train_race_num,test_race_num)
 
 def getMinMaxSample(num_sample):
-    max_sample = 0
-    min_sample = np.inf
+    max_sample = np.inf
+    min_sample = 0
     for key in num_sample:
-        max_sample = max(max_sample,np.quantile(list(num_sample[key].values()),0.8))
-        min_sample = min(min_sample,np.quantile(list(num_sample[key].values()),0.2))
+        max_sample = min(max_sample,np.quantile(list(num_sample[key].values()),0.8))
+        min_sample = max(min_sample,np.quantile(list(num_sample[key].values()),0.2))
     return min_sample, max_sample
 
-def update(select_size, threshold):
+def update(select_size, threshold, num,ds_num):
     threshold -= num
     ds_num -= 1
     if ds_num!=0:
         select_size = math.ceil(threshold*1.0/ds_num)
     else:
         select_size = threshold
-    return select_size, threshold
+    return select_size, threshold, ds_num
 
 def getBalancedData(data_folder):
     dataset_names = ['UTKdata','Megaasian','APPA','MORPH']
@@ -138,7 +138,7 @@ def getBalancedData(data_folder):
     for dataset in alldatasets:
         for samples in tqdm(alldatasets[dataset]):
             if 1<=samples['age']<=100 and samples['race'] in ['caucasian','afroamerican','asian']:
-                all_samples[dataset][samples['race']][samples['age']].append([samples['image_path'],samples['age'],samples['race'],samples['gender']])
+                all_samples[dataset][samples['race']][samples['age']].append([samples['image_path'],samples['race'],samples['age']-1,samples['gender']])
                 dataset_samples[samples['age']][samples['race']][dataset]+=1
                 num_sample[samples['race']][samples['age']]+=1
 
@@ -147,9 +147,14 @@ def getBalancedData(data_folder):
         num_sample[key] = dict(sorted(samples.items(), key=lambda samples:samples[1]))
 
     min_sample , max_sample = getMinMaxSample(num_sample)
-
-    balancedData = []
-
+    # max_sample = 1000
+    balancedTrainData = []
+    balancedTestData = []
+    train_data_num = {
+        'caucasian':{i:0 for i in range(1,101)},
+        'afroamerican':{i:0 for i in range(1,101)},
+        'asian':{i:0 for i in range(1,101)}
+    }
     for age in range(1,101):
         threshold = np.inf
         for race in num_sample:
@@ -157,21 +162,39 @@ def getBalancedData(data_folder):
         threshold = int(min(max_sample,max(min_sample,threshold)))
         ds_num = len(alldatasets)
         select_size = math.ceil(threshold*1.0/ds_num)
+        print(threshold, select_size,max_sample,min_sample)
         for race in num_sample:
+            race_threshold = threshold
+            race_select_size = select_size
             ds_num = len(alldatasets)
             race_num_sample = copy.deepcopy(dataset_samples[age][race])
             dataset_samples[age][race] = dict(sorted(race_num_sample.items(), key=lambda race_num_sample:race_num_sample[1]))
-            for dataset in alldatasets:
+            for dataset in dataset_samples[age][race]:
                 num = dataset_samples[age][race][dataset]
-                if num < select_size:
-                    for sample in all_samples[dataset][race][age]:
-                        balancedData.append(sample)
-                    select_size, threshold = update(select_size, threshold)
+                if num < race_select_size:
+                    train_size = math.ceil(num*0.8)
+                    for index in range(train_size) :
+                        balancedTrainData.append(all_samples[dataset][race][age][index])
+                        train_data_num[race][age]+=1
+                    for index in range(train_size,num):
+                        balancedTestData.append(all_samples[dataset][race][age][index])
+                    race_select_size, race_threshold, ds_num = update(race_select_size, race_threshold, num, ds_num)
                 else:
-                    indices = np.random.choice(len(all_samples[dataset][race][age]),select_size,replace=False)
-                    for index in indices:
-                        balancedData.append(all_samples[dataset][race][age][index])
-    print(len(balancedData))
+                    indices = np.random.choice(len(all_samples[dataset][race][age]),race_select_size,replace=False)
+                    train_size = math.floor(race_select_size*0.8)
+                    ds_num-=1
+                    for index in range(train_size):
+                        balancedTrainData.append(all_samples[dataset][race][age][indices[index]])
+                        train_data_num[race][age]+=1
+                    for index in range(train_size,len(indices)):
+                        balancedTestData.append(all_samples[dataset][race][age][indices[index]])
+    
+    balancedTestData = pd.DataFrame(balancedTestData)
+    balancedTrainData = pd.DataFrame(balancedTrainData)
+
+    balancedTestData.to_csv('test.csv',header=None, index=None,sep='\t')
+    balancedTrainData.to_csv('train.csv',header=None, index=None,sep='\t')
+
     return 
 
 
