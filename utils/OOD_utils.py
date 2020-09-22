@@ -126,11 +126,11 @@ def ConvertAndGetscores(train_path, aug_loader, batch_size, weight_path, num_cla
     # aug_scores = torch.load('/home/david/bias_ai_glod/SweetGAN/OOD_scores/FineTuneData_out_scores_augextreme.txt_preds.pt')
     # Sample data
     # take_samples(out_scores, out_set_X,out_set_y,out_race,quantile=quantile)
-    k=100
-    top_k = aug_scores.topk(k).values.squeeze()
-    avg_ll = np.mean(top_k[:, 1:k].cpu().detach().numpy())
-    llr = top_k[:, 0].cpu()-avg_ll
-    return llr
+    # k=100
+    # top_k = aug_scores.topk(k).values.squeeze()
+    # avg_ll = np.mean(top_k[:, 1:k].cpu().detach().numpy())
+    # llr = top_k[:, 0].cpu()-avg_ll
+    return aug_scores
 
 def split_data(scores, dataset,label_age,label_race, quantile=0.03):
     threshold=np.quantile(scores,quantile)
