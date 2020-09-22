@@ -4,3 +4,4 @@ pretrained_model/
 utils/__pycache__
 models/__pycache__
 pre-processing/__pycache__
+data/

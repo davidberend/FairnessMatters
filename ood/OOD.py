@@ -38,7 +38,7 @@ def Convert(train_path, batch_size, weight_path, device, transform, version=50, 
     return model
 
 
-def main(train_path, batch_size, weight_path, num_classes, glod_k = 100, quantile=0.05):
+def ConvertAndGetscores(train_path, batch_size, weight_path, num_classes, glod_k = 100, quantile=0.05):
     
     img_pixels = (224,224)
     transform = transforms.Compose([transforms.ToTensor(),
@@ -61,7 +61,7 @@ def main(train_path, batch_size, weight_path, num_classes, glod_k = 100, quantil
 
     # Convert to Glod
     glod_model = Convert(train_path, batch_size, weight_path, device,transform)
-
+    torch.save(glod_model.state_dict(),'glod_model.pt')
     # Retrive scores
     out_scores = retrieve_scores(glod_model, out_loader, device, glod_k)
     in_scores = retrieve_scores(glod_model, in_loader, device, glod_k)
@@ -103,4 +103,4 @@ if __name__=="__main__":
     quantile = args.quantile
     num_classes = args.num_classes
     
-    main(train_path, batch_size, weight_path, num_classes, glod_k = glod_k, quantile=quantile)
+    ConvertAndGetscores(train_path, batch_size, weight_path, num_classes, glod_k = glod_k, quantile=quantile)
