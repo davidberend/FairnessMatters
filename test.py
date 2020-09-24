@@ -1,6 +1,5 @@
 from utils import data_utils
-from utils import model_utils
-from models import vgg_face,Generalmodels
+from models import Generalmodels
 from torchvision import transforms, models
 from utils.train_utils import test,test_range
 import numpy as np
@@ -14,7 +13,7 @@ import torchvision.transforms as trn
 from progressbar import ProgressBar,Percentage,Bar,Timer,ETA,FileTransferSpeed
 from PIL import Image
 
-def test_model(test_path,model_name,trained_model,save_path,traineddataset,finetunedataset,testdataset,opt,lr,pretrain,num_classes,test_split=False):
+def test_model(test_path,model_name,trained_model,save_path,traineddataset,testdataset,opt,lr,pretrain,num_classes,test_split=False):
     state = defaultdict()
     test_loader=defaultdict()
     train_loader=defaultdict()
@@ -43,13 +42,13 @@ def test_model(test_path,model_name,trained_model,save_path,traineddataset,finet
     if not test_split:
         if not os.path.exists(save_path):
             os.makedirs(save_path)
-        for i in test_loader:
-            test(net,test_loader[i],state)
-            with open(os.path.join(save_path,  '{}_{}_{}_{}_{}_{}_results.csv'.format(traineddataset,model_name,finetunedataset,opt,lr,testdataset)), 'a') as f:
-                f.write('%s,%0.6f\n' % (
-                i+'(test)',
-                state['test_accuracy'],
-                ))
+        test(net,test_loader,state)
+        with open(os.path.join(save_path,  '{}_{}_{}_{}_{}_results.csv'.format(
+            traineddataset,model_name,opt,lr,testdataset)), 'a') as f:
+            f.write('%s,%0.6f\n' % (
+            '(test)',
+            state['test_accuracy'],
+            ))
     
     # Test performance per age
     if test_split:
@@ -59,10 +58,12 @@ def test_model(test_path,model_name,trained_model,save_path,traineddataset,finet
         if testdataset=='FineTuneData':
             testdataset='testing'
 
-        gt,tp,mae,prediction,classpredicts,regrepredicts,labels=test_range(net,test_loader,state,num_classes)
+        gt,tp,mae,prediction,classpredicts,regrepredicts,labels=\
+            test_range(net,test_loader,state,num_classes)
         
         # write predictions 
-        f=open(os.path.join(new_path,  '{}_{}_{}_{}_{}_{}_allpredictions.csv'.format(traineddataset,model_name,finetunedataset,opt,lr,testdataset)), 'w')
+        f=open(os.path.join(new_path,  '{}_{}_{}_{}_{}_allpredictions.csv'.format(
+            traineddataset,model_name,opt,lr,testdataset)), 'w')
         f.write('%s,%s,%s\n'%('label','classpred','regreepred',))
         for i in range(len(classpredicts)):
                 f.write('%d,%d,%0.2f\n' % (
@@ -73,7 +74,8 @@ def test_model(test_path,model_name,trained_model,save_path,traineddataset,finet
         f.close()
 
         # Write performance
-        f=open(os.path.join(new_path,  '{}_{}_{}_{}_{}_{}_results.csv'.format(traineddataset,model_name,finetunedataset,opt,lr,testdataset)), 'w')
+        f=open(os.path.join(new_path,  '{}_{}_{}_{}_{}_results.csv'.format(
+                        traineddataset,model_name,opt,lr,testdataset)), 'w')
         f.write('%s,%s,%s,%s,%s\n'%('age','number','accuracy','mae','perceived'))
         for i in range(len(gt)):
                 f.write('%d,%d,%0.6f,%0.3f,%0.3f\n' % (
@@ -92,8 +94,7 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser(description='control experiment')
 
     parser.add_argument('-test_path', help='base folder',default='datasets')
-    parser.add_argument('-train_path', help='base folder',default='datasets')
-    parser.add_argument('-test_split', help='if test split', type=int,default=0)
+    parser.add_argument('-test_split', help='if test split', type=int,default=1)
     parser.add_argument('-save_path', help='test results to be stored', default='test_results')
     parser.add_argument('-model_folder', help='test results to be stored', default='model_weights_new')
     parser.add_argument('-pretrain',action='store_true',help='if this is a pretraining procedure')
@@ -104,12 +105,17 @@ if __name__=="__main__":
     test_path=args.test_path
     test_split=True if args.test_split!=0 else False
     testdataset=test_path.split('/')[-1].split('_')[0]
-    save_path=os.path.join(args.save_path,mode)
+    save_path=args.save_path
     save_path=os.path.join(save_path,test_path.split('/')[-2])
     trained_model=args.trained_model
     pretrain=args.pretrain
     modelInfo=args.trained_model.split('/')[-1].split('_')
-    traineddataset,model_name,finetunedataset,opt,lr,num_classes=modelInfo[0],modelInfo[1],modelInfo[2],modelInfo[3],modelInfo[4],int(modelInfo[5])
+
+    model_name = modelInfo[0]
+    traineddataset = modelInfo[1]
+    opt = modelInfo[-2]
+    lr = modelInfo[-1]
+    print(model_name)
     model_path=None
     
     # Check the existance of trained model
@@ -119,4 +125,4 @@ if __name__=="__main__":
     if not model_path:
         raise IOError('model does not exist!!')
     
-    test_model(test_path,model_name,model_path,save_path,traineddataset,finetunedataset,testdataset,opt,lr,pretrain,num_classes,test_split)
+    test_model(test_path,model_name,model_path,save_path,traineddataset,testdataset,opt,lr,pretrain,num_classes=100,test_split=test_split)

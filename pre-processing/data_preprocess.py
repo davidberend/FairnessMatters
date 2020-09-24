@@ -19,119 +19,132 @@ print(sys.path)
 from get_raw_data import getUTKdata, getMORPHdata, getAPPAdata, getMegaasianData, getFGNETdata, getIMDB, getWIKI
 from utils.data_utils import getMinMaxSample, update
 
-def getBalancedData(data_folder):
+def get_balanced_data(data_folder, train_save_path='../data/train.tsv' , test_save_path='../data/test.tsv'):
     dataset_names = ['UTKdata','Megaasian','APPA','MORPH']
+    races = ['caucasian','afroamerican','asian']
     # Get all four datasets
-    alldatasets = {
+    all_datasets = {
         'UTKdata':getUTKdata(data_folder),
         'Megaasian': getMegaasianData(data_folder),
         'APPA': getAPPAdata(data_folder),
         'MORPH': getMORPHdata(data_folder)
     }
-    single_num_samples = {
-        'caucasian':{i:0 for i in dataset_names},
-        'afroamerican':{i:0 for i in dataset_names},
-        'asian':{i:0 for i in dataset_names}
+
+    # Store the number of samples of each age of each race of each dataset
+    # Organized as age->race->dataset
+    # For sorting the datasets for choosing data
+    num_samples_tmp = {
+        race:{i:0 for i in dataset_names} for race in races
     }
     dataset_samples = {
-        i:copy.deepcopy(single_num_samples) for i in range(1,101)
-    }
-    # num = dataset_samples[2]['caucasian']['UTKdata']
-    single_samples = {
-        'caucasian':defaultdict(list),
-        'afroamerican':defaultdict(list),
-        'asian':defaultdict(list)
+        i:copy.deepcopy(num_samples_tmp) for i in range(1,101)
     }
 
+    # Store the samples, organized by dataset->race->age
+    # For sampling the balanced data
+    all_samples_tmp = {
+        race:defaultdict(list) for race in races
+    }
     all_samples = {
-        'UTKdata':copy.deepcopy(single_samples),
-        'Megaasian': copy.deepcopy(single_samples),
-        'APPA': copy.deepcopy(single_samples),
-        'MORPH': copy.deepcopy(single_samples)
+        dataset:copy.deepcopy(all_samples_tmp) for dataset in dataset_names
     }
 
     # Number of samples for each ethnicity in each age
+    # For getting the max, min and threshold
     num_sample = {
-        'caucasian':{i:0 for i in range(1,101)},
-        'afroamerican':{i:0 for i in range(1,101)},
-        'asian':{i:0 for i in range(1,101)}
+        race:{i:0 for i in range(1,101)} for race in races
     }
 
-    for dataset in alldatasets:
-        for samples in tqdm(alldatasets[dataset]):
+    # Store and organize the original data from the raw data
+    for dataset in all_datasets:
+        for samples in tqdm(all_datasets[dataset]):
             if 1<=samples['age']<=100 and samples['race'] in ['caucasian','afroamerican','asian']:
                 all_samples[dataset][samples['race']][samples['age']].append([samples['image_path'],samples['race'],samples['age']-1])
                 dataset_samples[samples['age']][samples['race']][dataset]+=1
                 num_sample[samples['race']][samples['age']]+=1
 
+    # Sort the number of samples of each race
     for key in num_sample:
         samples = copy.deepcopy(num_sample[key])
         num_sample[key] = dict(sorted(samples.items(), key=lambda samples:samples[1]))
 
     min_sample , max_sample = getMinMaxSample(num_sample)
-    # max_sample = 1000
-    balancedTrainData = []
-    balancedTestData = []
+
+    # Store the train data and test data
+    balanced_train_data = []  
+    balanced_test_data = []
     train_data_num = {
-        'caucasian':{i:0 for i in range(1,101)},
-        'afroamerican':{i:0 for i in range(1,101)},
-        'asian':{i:0 for i in range(1,101)}
+        race:{i:0 for i in range(1,101)} for race in races
     }
+
     for age in range(1,101):
+
+        # Get threshold
         threshold = np.inf
         for race in num_sample:
             threshold = min(threshold,num_sample[race][age])
         threshold = int(min(max_sample,max(min_sample,threshold)))
-        ds_num = len(alldatasets)
+
+        # Get select_size
+        ds_num = len(all_datasets)
         select_size = math.ceil(threshold*1.0/ds_num)
-        print(threshold, select_size,max_sample,min_sample)
+        # print(threshold, select_size,max_sample,min_sample)
+
+
         for race in num_sample:
+            # Copy threshold and threshold for update for this race
             race_threshold = threshold
             race_select_size = select_size
-            ds_num = len(alldatasets)
+            ds_num = len(all_datasets)
+
+            # Sort the dataset according to the number of samples about each race at this age 
             race_num_sample = copy.deepcopy(dataset_samples[age][race])
             dataset_samples[age][race] = dict(sorted(race_num_sample.items(), key=lambda race_num_sample:race_num_sample[1]))
+
+            # Begin sampling data
             for dataset in dataset_samples[age][race]:
+
+                # get the number of the samples of this dataset in this age and this race
                 num = dataset_samples[age][race][dataset]
                 if num < race_select_size:
                     train_size = math.ceil(num*0.8)
+
+                    # Sampling train data
                     for index in range(train_size) :
-                        balancedTrainData.append(all_samples[dataset][race][age][index])
+                        balanced_train_data.append(all_samples[dataset][race][age][index])
                         train_data_num[race][age]+=1
+                    # Sampling test data
                     for index in range(train_size,num):
-                        balancedTestData.append(all_samples[dataset][race][age][index])
+                        balanced_test_data.append(all_samples[dataset][race][age][index])
                     race_select_size, race_threshold, ds_num = update(race_select_size, race_threshold, num, ds_num)
                 else:
+                    
+                    # random sample from dataset
                     indices = np.random.choice(len(all_samples[dataset][race][age]),race_select_size,replace=False)
                     train_size = math.floor(race_select_size*0.8)
                     ds_num-=1
                     for index in range(train_size):
-                        balancedTrainData.append(all_samples[dataset][race][age][indices[index]])
+                        balanced_train_data.append(all_samples[dataset][race][age][indices[index]])
                         train_data_num[race][age]+=1
                     for index in range(train_size,len(indices)):
-                        balancedTestData.append(all_samples[dataset][race][age][indices[index]])
+                        balanced_test_data.append(all_samples[dataset][race][age][indices[index]])
     
-    balancedTestData = pd.DataFrame(balancedTestData)
-    balancedTrainData = pd.DataFrame(balancedTrainData)
+    balanced_test_data = pd.DataFrame(balanced_test_data)
+    balanced_train_data = pd.DataFrame(balanced_train_data)
 
-    balancedTestData.to_csv('./data/test.tsv',header=None, index=None,sep='\t')
-    balancedTrainData.to_csv('./data/train.tsv',header=None, index=None,sep='\t')
-
+    balanced_test_data.to_csv(test_save_path,header=None, index=None,sep='\t')
+    balanced_train_data.to_csv(train_save_path,header=None, index=None,sep='\t')
+    print(train_data_num)
     return 
-
-
-def main(data_folder):
-    getBalancedData(data_folder)
     
-
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-dir', type=str, default='/mnt/nvme/aibias/OriDatasets/')
-    parser.add_argument('-train_save_path', type=str)
-    parser.add_argument('-test_save_path', type=str)
+    parser.add_argument('-train_save_path', type=str, default='../data/train.tsv')
+    parser.add_argument('-test_save_path', type=str, default='../data/test.tsv')
     args = parser.parse_args()
     data_folder = args.dir
     train_save_path = args.train_save_path
     test_save_path = args.test_save_path
-    main(data_folder)
+    get_balanced_data(data_folder, train_save_path, test_save_path)

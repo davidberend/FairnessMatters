@@ -1,13 +1,12 @@
 
-from train_utils import train_baseline,test,adjust_opt
+from utils.train_utils import train_baseline,test,adjust_opt
 import torch.backends.cudnn as cudnn
 import torchvision.transforms as trn
 from collections import defaultdict
 import os
 import sys
-import data_utils
-import model_utils
-from models import vgg_face,Generalmodels
+from utils import data_utils
+from models import Generalmodels
 import torch.optim.lr_scheduler
 import time
 import torch.optim as optim
@@ -19,7 +18,7 @@ import torch
 import os
 import torch.nn as nn
 
-def train_model(train_path, test_path, batch_size=32, model_name = "resnet", opt="sgd",dataset="UTK",num_epochs=100,lr=0.01,
+def train_model(train_path, test_path, batch_size=256, model_name = "resnet", opt="sgd",dataset="UTK",num_epochs=100,lr=0.01,
                 pretrain=False,trained_model=None):
     # Configuration
     state = defaultdict()
@@ -46,7 +45,7 @@ def train_model(train_path, test_path, batch_size=32, model_name = "resnet", opt
         save_path = "./model_weights/pretrained/{}_{}_{}".format(model_name,opt,str(lr))
     else:
         num_classes=100
-        save_path = "./model_weights/{}/{}_{}_{}_{}".format(test_path.split('/')[-2],model_name,dataset,opt,str(lr))
+        save_path = "./model_weights/{}_{}_{}_{}".format(model_name,dataset,opt,str(lr))
     model_type = "{}_{}".format(model_name, dataset)
     print('Using Data: ',train_path)
 
@@ -82,6 +81,7 @@ def train_model(train_path, test_path, batch_size=32, model_name = "resnet", opt
     # Main loop
     best_epoch = 0
     best_acc = 0.0
+    prev_path=' '
     for epoch in range(num_epochs):
         adjust_opt(opt, optimizer, epoch,lr)
         state['epoch'] = epoch
@@ -91,18 +91,18 @@ def train_model(train_path, test_path, batch_size=32, model_name = "resnet", opt
         train_baseline(net,train_loader,optimizer,state)
         test(net,test_loader,state)
          # Save model
-        if epoch==0:
-            best_epoch = epoch
-            best_acc = state['test_accuracy']
-            cur_save_path = os.path.join(save_path, '{}_epoch_{}_{}.pt'.format(model_type,best_epoch,best_acc))
-            torch.save(net.state_dict(),cur_save_path)
+        # if epoch==0:
+        #     best_epoch = epoch
+        #     best_acc = state['test_accuracy']
+        #     cur_save_path = os.path.join(save_path, '{}_epoch_{}_{}.pt'.format(model_type,best_epoch,best_acc))
+        #     torch.save(net.state_dict(),cur_save_path)
         cur_acc = state['test_accuracy']
         if cur_acc > best_acc:
             cur_save_path = os.path.join(save_path, '{}_epoch_{}_{}.pt'.format(model_type,epoch,cur_acc))
             torch.save(net.state_dict(),cur_save_path)
-            prev_path = os.path.join(save_path, '{}_epoch_{}_{}.pt'.format(model_type,best_epoch,best_acc))
             if os.path.exists(prev_path): 
                 os.remove(prev_path)
+            prev_path = cur_save_path
             best_epoch = epoch
             best_acc = cur_acc
               
@@ -132,14 +132,14 @@ if __name__=="__main__":
 
     parser = argparse.ArgumentParser(description='control experiment')
 
-    parser.add_argument('-datafolder', help='data folder',default='datasets')
-    parser.add_argument('-train_path', help='training samples', default='UTK_train_info_5yr.txt')
-    parser.add_argument('-test_path', help='test samples', default='UTK_test_info_5yr.txt')
-    parser.add_argument('-model_name', help='model to be trained', default='resnet')
-    parser.add_argument('-dataset', help='dataset to be trained', default='UTK')
-    parser.add_argument('-opt', type=str, help='choose optimizer', default="sgd")
+    parser.add_argument('-datafolder', help='data folder',default='./data')
+    parser.add_argument('-train_path', help='training samples', default='train.tsv')
+    parser.add_argument('-test_path', help='test samples', default='test.tsv')
+    parser.add_argument('-model_name', help='model to be trained', default='resnet50')
+    parser.add_argument('-dataset', help='dataset to be trained', default='ori_balanced_data')
+    parser.add_argument('-opt', type=str, help='choose optimizer', default="adam")
     parser.add_argument('-num_epoches', type=int, help='number of classes', default=100)
-    parser.add_argument('-lr', type=float, help='learning rate', default=0.001)
+    parser.add_argument('-lr', type=float, help='learning rate', default=0.0001)
     parser.add_argument('-pretrain',action='store_true',help='if this is a pretraining procedure')
     parser.add_argument('-trained_model',type=str,help='The pre-trained model')
     

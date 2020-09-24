@@ -19,6 +19,8 @@ from utils.OOD_utils import visualize_distribution, take_samples, Convert, Conve
 from utils.data_utils import getMinMaxSample, update
 # from autoaugment import ImageNetPolicy
 
+races = ['caucasian','afroamerican','asian']
+
 def random_augmentation(im, brightness=0, contrast=0, saturation=0, hue=0,
                         erase_p=0.5, erase_scale=(0.02, 0.33),
                         erase_ratio=(0.3, 3.3), erase_value=0,
@@ -78,9 +80,9 @@ def batch_augmentation(race,age,aug_ratio, total_data, aug_data):
             # aug_datas.append([sample[0]+'aug_{}.jpg'.format(i),sample[1],sample[2],sample[3]])
             aug_data.write('{}\t{}\t{}\t{}\n'.format(sample[0]+'aug_{}.jpg'.format(i),sample[1],sample[2],sample[3]))
 
-def data_augmentation(data_path=None):
+def data_augmentation(data_path='./data/train.tsv'):
+    races = ['caucasian','afroamerican','asian']
     ## Loading data
-    data_path = './data/train.tsv'
     f=open(data_path,'r')
     alldatasets=f.readlines()
     total_data={
@@ -146,25 +148,18 @@ def balancing_augmented_data():
     print(len(splited_data))
 
     all_samples = {
-        'caucasian':defaultdict(list),
-        'afroamerican':defaultdict(list),
-        'asian':defaultdict(list)
+        race:defaultdict(list) for race in races
     }
 
     single_num_samples = {
-        'caucasian':0,
-        'afroamerican':0,
-        'asian':0
+        race:0 for race in races
     }
-
     age_num_samples = {
         i:copy.deepcopy(single_num_samples) for i in range(0,100)
     }
 
     race_num_samples = {
-        'caucasian':{i:0 for i in range(0,100)},
-        'afroamerican':{i:0 for i in range(0,100)},
-        'asian':{i:0 for i in range(0,100)}
+        race:{i:0 for i in range(0,100)} for race in races
     }
 
     for samples in splited_data:

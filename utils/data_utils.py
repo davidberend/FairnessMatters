@@ -25,11 +25,6 @@ def update(select_size, threshold, num,ds_num):
         select_size = threshold
     return select_size, threshold, ds_num
 
-def make_dataloader(samples,labels,img_size=(32,32), batch_size=256, transform_test=None, shuffle=False, num_workers=2):
-    dataset = Img_Dataset(samples,labels = labels,img_size = img_size, transform=transform_test)
-    dataloader = torch.utils.data.DataLoader(dataset,batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, pin_memory=True)
-    return dataloader
-
 def make_dataloader_iter(samples,labels,img_size=(32,32), batch_size=256, transform_test=None, shuffle=False, num_workers=2):
     dataset = Img_Dataset_Iter(samples,labels = labels,img_size = img_size, transform=transform_test)
     dataloader = torch.utils.data.DataLoader(dataset,batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, pin_memory=True)

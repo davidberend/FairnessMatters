@@ -5,3 +5,7 @@ utils/__pycache__
 models/__pycache__
 pre-processing/__pycache__
 data/
+model_weights/
+test_results/
+ood/__pycache__
+.vscode/
