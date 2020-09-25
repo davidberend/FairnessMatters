@@ -160,7 +160,7 @@ def test_range(net,test_loader,state,num_classes):
             
             # test loss average
             loss_avg += float(loss.data)
-        print(truepositive)
+        # print(truepositive)
     progress.finish()
 
     state['test_loss'] = loss_avg / len(test_loader)
