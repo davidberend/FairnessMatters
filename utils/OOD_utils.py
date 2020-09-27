@@ -22,12 +22,10 @@ Green= '#009926'
 
 def visualize_distribution(in_dist, out_dist, model_type, data_type, k):
 
-    in_dist = in_dist.detach().cpu().numpy()
-    out_dist = out_dist.detach().cpu().numpy()
+    in_dist = in_dist
+    out_dist = out_dist
     plt.hist(in_dist, bins=300, rwidth=0.8,  color=LightBlue,alpha=0.5)
     plt.hist(out_dist, bins=300, rwidth=0.8, color=Orange,alpha=0.5)
-    plt.xlim((-1000,1000))
-
     plt.cla()
 
 def convert(train_path, batch_size, weight_path, device, transform, version=50, num_classes=100, img_pixels= (224, 224)):
