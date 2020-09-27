@@ -29,16 +29,28 @@ After downloading these datasets, they are required to be moved to the ``./data`
 
 <br>
 
+## Whole Procedure
+
+#### Data pre-processing
+After downloading and unzipping data in the ``./data`` folder, go into ``pre-processing`` folder and run the following code to construct Balanced Data.
+
+```
+python data_preprocess.py -dir <PATH_TO_DATA> -train_save_path <PATH_TO_TRAIN_DATA> -test_save_path <PATH_TO_TEST_DATA>
+```
+#### Training and Testing
+When data is ready, run the ``train.py`` file to train the model and use the ``test.py`` file to test the model.
+
+#### Data Augmentation and OOD_retrival
+After training, run the file ``data_augmentation.py`` to do the augmentation and OOD selecting to get augmentated data.
+
+#### Augmentated Data Training and Testing
+Similarly, run the ``train.py`` and ``test.py`` to train and test the model on augmentated data.
+
 ## Results
 Comparison of enhancement approach to SOTA and human perception:
 <img src="./results/Analysis_comp_perception.png">
 
 Ethnicity specific perception on SOTA
-<!-- <center class="half">
-    <img src="./results/Analysys_alexnet_perception.png" width="33%"/><img src="./results/Analysys_aws_perception.png" width="33%"/><img src="./results/Analysys_azure_perception.png" width="33%"/><img src="./results/Analysys_human_perception.png" width="33%"/><img src="./results/Analysys_DEX_perception.png" width="33%"/>
-    <p></p>
-</center> -->
-
 
 <table style="width:100%; table-layout:fixed;">
   <tr align='center'>
