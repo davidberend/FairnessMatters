@@ -13,7 +13,25 @@ from ood.OOD_techniques.glod import retrieve_scores, ConvertToGlod, calc_gaussia
 from models.Generalmodels import create_Resnet
 import utils.data_utils
 
-def Convert(train_path, batch_size, weight_path, device, transform, version=50, num_classes=100, img_pixels= (224, 224)):
+DarkBlue= '#051c2c'
+LightBlue= '#3ba9f5'
+LightGrey='#989898'
+Blue= '#2140e6'
+BrightBlue='#aae6f0'
+Orange='#FF7828'
+Green= '#009926'
+
+def visualize_distribution(in_dist, out_dist, model_type, data_type, k):
+
+    in_dist = in_dist.detach().cpu().numpy()
+    out_dist = out_dist.detach().cpu().numpy()
+    plt.hist(in_dist, bins=300, rwidth=0.8,  color=LightBlue,alpha=0.5)
+    plt.hist(out_dist, bins=300, rwidth=0.8, color=Orange,alpha=0.5)
+    plt.xlim((-1000,1000))
+
+    plt.cla()
+
+def convert(train_path, batch_size, weight_path, device, transform, version=50, num_classes=100, img_pixels= (224, 224)):
     # data
     train_set_X, train_set_y, _ = utils.data_utils.process_data(train_path)
 
@@ -38,7 +56,7 @@ def Convert(train_path, batch_size, weight_path, device, transform, version=50, 
 
     return model
 
-def ConvertAndGetscores(train_path, aug_loader, batch_size, weight_path, num_classes, glod_k = 100, transform=None):
+def convert_and_get_scores(train_path, aug_loader, batch_size, weight_path, num_classes, glod_k = 100, transform=None):
     device='cuda:0'
     device = torch.device(device)
     
@@ -48,7 +66,7 @@ def ConvertAndGetscores(train_path, aug_loader, batch_size, weight_path, num_cla
                       device=device)
 
     # Convert to Glod
-    glod_model = Convert(train_path, batch_size, weight_path, device,transform)
+    glod_model = convert(train_path, batch_size, weight_path, device,transform)
 
     # Retrive scores
     aug_scores = retrieve_scores(glod_model, aug_loader, device, glod_k)

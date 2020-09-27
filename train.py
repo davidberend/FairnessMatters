@@ -91,11 +91,6 @@ def train_model(train_path, test_path, batch_size=256, model_name = "resnet", op
         train_baseline(net,train_loader,optimizer,state)
         test(net,test_loader,state)
          # Save model
-        # if epoch==0:
-        #     best_epoch = epoch
-        #     best_acc = state['test_accuracy']
-        #     cur_save_path = os.path.join(save_path, '{}_epoch_{}_{}.pt'.format(model_type,best_epoch,best_acc))
-        #     torch.save(net.state_dict(),cur_save_path)
         cur_acc = state['test_accuracy']
         if cur_acc > best_acc:
             cur_save_path = os.path.join(save_path, '{}_epoch_{}_{}.pt'.format(model_type,epoch,cur_acc))

@@ -8,7 +8,7 @@ import numpy as np
 import math
 from .img_set import Img_Dataset,Img_Dataset_Iter
 
-def getMinMaxSample(num_sample):
+def get_min_max_sample(num_sample):
     max_sample = np.inf
     min_sample = 0
     for key in num_sample:

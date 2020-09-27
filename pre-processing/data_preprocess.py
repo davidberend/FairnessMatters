@@ -136,15 +136,29 @@ def get_balanced_data(data_folder, train_save_path='../data/train.tsv' , test_sa
     balanced_train_data.to_csv(train_save_path,header=None, index=None,sep='\t')
     print(train_data_num)
     return 
-    
+
+def get_separate_data(file_path):
+    f=open(file_path,'r')
+    folder = '/'.join(file_path.split('/')[:-1])
+    lines=f.readlines()
+    races=defaultdict(list)
+    for line in lines:
+        race=line.strip().split('\t')[1]
+        races[race].append(line)
+    for keys in races:
+        f=open('{}/{}_test.tsv'.format(folder,keys),'w')
+        for i in races[keys]:
+            f.write(i)
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-dir', type=str, default='/mnt/nvme/aibias/OriDatasets/')
-    parser.add_argument('-train_save_path', type=str, default='../data/train.tsv')
-    parser.add_argument('-test_save_path', type=str, default='../data/test.tsv')
+    parser.add_argument('-train_save_path', type=str, default='../data/original/train.tsv')
+    parser.add_argument('-test_save_path', type=str, default='../data/original/test.tsv')
     args = parser.parse_args()
     data_folder = args.dir
     train_save_path = args.train_save_path
     test_save_path = args.test_save_path
     get_balanced_data(data_folder, train_save_path, test_save_path)
+    get_separate_data(test_save_path)

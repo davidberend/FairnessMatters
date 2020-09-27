@@ -15,8 +15,8 @@ import sys
 import copy
 from ood.OOD_techniques.glod import retrieve_scores, ConvertToGlod, calc_gaussian_params
 from models.Generalmodels import create_Resnet
-from utils.OOD_utils import visualize_distribution, take_samples, Convert, ConvertAndGetscores, split_data
-from utils.data_utils import getMinMaxSample, update
+from utils.OOD_utils import visualize_distribution, convert, convert_and_get_scores, split_data
+from utils.data_utils import get_min_max_sample, update
 # from autoaugment import ImageNetPolicy
 
 races = ['caucasian','afroamerican','asian']
@@ -80,21 +80,14 @@ def batch_augmentation(race,age,aug_ratio, total_data, aug_data):
             # aug_datas.append([sample[0]+'aug_{}.jpg'.format(i),sample[1],sample[2],sample[3]])
             aug_data.write('{}\t{}\t{}\t{}\n'.format(sample[0]+'aug_{}.jpg'.format(i),sample[1],sample[2],sample[3]))
 
-def data_augmentation(data_path='./data/train.tsv'):
+def data_augmentation(data_path, aug_data_path):
     races = ['caucasian','afroamerican','asian']
     ## Loading data
     f=open(data_path,'r')
     alldatasets=f.readlines()
-    total_data={
-            'caucasian':defaultdict(list),
-            'afroamerican':defaultdict(list),
-            'asian':defaultdict(list),
-    }
-    race_num={
-            'caucasian':defaultdict(int),
-            'afroamerican':defaultdict(int),
-            'asian':defaultdict(int),
-    }
+    total_data={race :defaultdict(list) for race in races}
+    race_num={race :defaultdict(int) for race in races}
+    
     # Load data according to age and race
     for data in alldatasets:
         data=data.strip()
@@ -103,7 +96,8 @@ def data_augmentation(data_path='./data/train.tsv'):
             race_num[data.split('\t')[1]][int(data.split('\t')[2])]+=1
         except:
             continue
-
+    
+    # Get statistic of data
     all_num=[]
     for key in race_num:
         all_num.extend(list(race_num[key].values()))
@@ -114,7 +108,8 @@ def data_augmentation(data_path='./data/train.tsv'):
     max_num = np.max(all_num)
     max_ratio = math.ceil(median_num/mean_num)
 
-    aug_data_file=open('./data/train_aug_ori.tsv','w')
+    # Augment data
+    aug_data_file=open(aug_data_path,'w')
     print('saving to {}'.format(aug_data_file))
     for race in total_data:
         for age in (range(100)):
@@ -126,7 +121,7 @@ def data_augmentation(data_path='./data/train.tsv'):
     aug_data_file.close()
     return 
 
-def getSplitData(aug_data_path):
+def get_split_data(aug_data_path):
     device = torch.device('cuda')
     img_pixels = (224,224)
     transform = transforms.Compose([transforms.ToTensor(),
@@ -138,30 +133,30 @@ def getSplitData(aug_data_path):
                                              batch_size=batch_size, transform_test=transform, shuffle=False)
     glod_k=20
     quantile = 0.05
-    scores = ConvertAndGetscores(train_path, aug_loader, batch_size, weight_path, num_classes=100, glod_k = glod_k, transform=transform)
 
-    splited_aug_data = split_data(scores, aug_data_X ,aug_data_age, aug_data_race, quantile=0.05)
+    # Convert model to glod and get scores
+    scores = convert_and_get_scores(train_path, aug_loader, batch_size, weight_path, num_classes=100, glod_k = glod_k, transform=transform)
+
+    # get the 'good' part of data
+    splited_aug_data = split_data(scores, aug_data_X ,aug_data_age, aug_data_race, quantile=quantile)
     return splited_aug_data
 
-def balancing_augmented_data():
-    splited_data = getSplitData(aug_data_path='./data/train_aug_ori.tsv')
-    print(len(splited_data))
+def balancing_augmented_data(aug_save_path, train_path, selected_aug_save_path):
+    # Get splited augmented data
+    splited_data = get_split_data(aug_save_path)
 
-    all_samples = {
-        race:defaultdict(list) for race in races
-    }
+    ###### Begin balancing ######
+    # Store all samples accoring to race
+    all_samples = {race:defaultdict(list) for race in races}
 
-    single_num_samples = {
-        race:0 for race in races
-    }
-    age_num_samples = {
-        i:copy.deepcopy(single_num_samples) for i in range(0,100)
-    }
+    # Count samples according to age->race->count
+    single_num_samples = {race:0 for race in races}
+    age_num_samples = {i:copy.deepcopy(single_num_samples) for i in range(0,100)}
 
-    race_num_samples = {
-        race:{i:0 for i in range(0,100)} for race in races
-    }
+    # Count samples according to race->age->count
+    race_num_samples = {race:{i:0 for i in range(0,100)} for race in races}
 
+    # Get statistic of data
     for samples in splited_data:
         all_samples[samples[1]][samples[2]].append(samples)
         race_num_samples[samples[1]][samples[2]]+=1
@@ -169,29 +164,27 @@ def balancing_augmented_data():
 
     balanced_splited_aug_data =[]
 
-    train_data_num = {
-        'caucasian':{i:0 for i in range(0,100)},
-        'afroamerican':{i:0 for i in range(0,100)},
-        'asian':{i:0 for i in range(0,100)}
-    }
+    train_data_num = {race :{i:0 for i in range(0,100)} for race in races}
 
     min_sample, max_sample = getMinMaxSample(race_num_samples)
     print(min_sample, max_sample)
     for age in range(0,100):
+
+        # Get threshold
         threshold = np.inf
         for race in race_num_samples:
             threshold = min(threshold,age_num_samples[age][race])
         threshold = int(min(max_sample,max(min_sample,threshold)))
 
+        # Get select_size
         race_num = len(race_num_samples)
-
         select_size = math.ceil(threshold/race_num)
         samples = copy.deepcopy(age_num_samples[age])
         age_num_samples[age] = dict(sorted(samples.items(), key=lambda samples:samples[1]))
 
+        # Balancing data
         for race in age_num_samples[age]:
             num = age_num_samples[age][race]
-            print(age,race,num,len(all_samples[race][age]),select_size)
             if num <select_size :
                 for index in range(num):
                     balanced_splited_aug_data.append(all_samples[race][age][index])
@@ -203,10 +196,12 @@ def balancing_augmented_data():
                 for index in indices:
                     balanced_splited_aug_data.append(all_samples[race][age][index])
                     train_data_num[race][age]+=1
-    ori_train_data = pd.read_csv('./data/train.tsv',header=None,sep='\t')
+    
+    # Add original train data to the augmented data
+    ori_train_data = pd.read_csv(train_path,header=None,sep='\t')
     balanced_splited_aug_data = pd.DataFrame(balanced_splited_aug_data)
     new = pd.concat([ori_train_data,balanced_splited_aug_data])
-    new.to_csv('./data/balanced_aug_data.tsv',header=None, index=None,sep='\t')
+    new.to_csv(selected_aug_save_path,header=None, index=None,sep='\t')
 
 
 if __name__=="__main__":
@@ -214,18 +209,20 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser(description='control experiment')
 
     parser.add_argument('-train_path', help='The dataset which used to train the original age prediction model',
-    default='/home/david/bias_ai_glod/SweetGAN/data/Balanced/FineTuneData_train_info_1yr.txt')
+                        default='data/original/train.tsv')
     parser.add_argument('-model_path', help='The path of the trained age prediction model',
-    default = '/home/david/aibias/model_weights/regression/both_resnet50_FineTuneData_adam_0.0001_100/resnet50_FineTuneData_epoch_122_0.3150045821877864.pt')
+                        default = '/home/david/aibias/model_weights/regression/both_resnet50_FineTuneData_adam_0.0001_100/resnet50_FineTuneData_epoch_122_0.3150045821877864.pt')
     parser.add_argument('-in_path', help='In distribution dataset',
-    default='/home/david/aibias/datasets/1_101_1yr/all/FineTuneData_train_info_1yr.txt')
+                        default='data/original/train.tsv')
     parser.add_argument('-out_path', help='Out of distribution dataset',
-    default='/home/david/aibias/datasets/1_101_1yr/all/FineTuneData_train_info_1yr_augextreme.txt')
+                        default='data/original/train_aug_ori.tsv')
     parser.add_argument('-batch_size', type=int, help='batch_size', default=256)
     parser.add_argument('-glod_k', type=int, help='glod_k value', default=100)
     parser.add_argument('-quantile', type=int, help='quantile', default=0.05)
     parser.add_argument('-num_classes', type=int, help='number of calss', default=100)
-
+    parser.add_argument('-save_path', type=str, help='number of calss', default='./data/augmented/balanced_aug_data.tsv')
+    parser.add_argument('-aug_save_path', type=str, help='number of calss', default='./data/original/train_aug_ori.tsv')
+    
     
     args = parser.parse_args()
 
@@ -237,8 +234,10 @@ if __name__=="__main__":
     glod_k = args.glod_k
     quantile = args.quantile
     num_classes = args.num_classes
+    selected_aug_save_path = args.save_path
+    aug_save_path = args.aug_save_path
     
-    # data_augmentation()
+    data_augmentation(train_path,aug_save_path)
 
-    # ConvertAndGetscores(train_path, batch_size, weight_path, num_classes, glod_k = glod_k, quantile=quantile)
-    balancing_augmented_data()
+    ConvertAndGetscores(train_path, batch_size, weight_path, num_classes, glod_k = glod_k, quantile=quantile)
+    balancing_augmented_data(aug_save_path,train_path,selected_aug_save_path)
