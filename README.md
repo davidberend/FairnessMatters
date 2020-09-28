@@ -29,19 +29,17 @@ After downloading these datasets, they are required to be moved to the ``./data`
 
 <br>
 
-## Whole Procedure
-
-#### Data pre-processing
+## Data pre-processing
 After downloading and unzipping data in the ``./data`` folder, go into ``pre-processing`` folder and run the following code to construct Balanced Data.
 
 ```
 python data_preprocess.py -dir <PATH_TO_DATA> -train_save_path <PATH_TO_TRAIN_DATA> -test_save_path <PATH_TO_TEST_DATA>
 ```
-##### Results
+### Results
 After balancing, the dataset has the following distribution:
 <img src="results/CHECKFIXDATASET_distribution.svg">
 
-#### Training and Testing
+## Training and Testing
 When data is ready, run the ``train.py`` file to train the model and use the ``test.py`` file to test the model.
 
 ```
@@ -51,7 +49,7 @@ python train.py -datafolder <PATH_TO_DATA_FOLDER> -opt <OPT_METHOD> -train_path 
 ```
 python test.py -test_path <PATH_TO_TEST_DATA> -result_folder <PATH_TO_SAVE_RESULTS> -trained_model <PATH_TO_TRAINED_MODEL> 
 ```
-##### Results
+### Results
 Comparison of enhancement approach to SOTA and human perception:
 <img src="./results/Analysis_comp_perception.png">
 
@@ -142,13 +140,13 @@ Balanced testset evaluation on SOTA
     </tr>
 </table>
 
-#### Data Augmentation and OOD_retrival
+## Data Augmentation and OOD_retrival
 After training, runing the file ``data_augmentation.py`` to do the augmentation and OOD selecting to get augmentated data.
 
 ```
 python data_augmentation -train_path <PATH_TO_TRAINING_DATA> -model_path <PATH_TO_TRAINED_MODEL> -in_path <PATH_TO_IN_DISTRIBUTION_DATA> -out_path <PATH_TO_OUT_OF_DISTRIBUTION_DATA> -batch_size <BATCH_SIZE> -quantile <QUANTILE_TO_SPLIT_DATA> -save_path <PATH_TO_SAVE_BALANCED_AUG_DATA> -aug_save_path <PATH_TO_SAVE_AUG_DATA>
 ```
-##### Results
+### Results
 OOD-Scores for Banalced DNN model:
 <center><img src="./results/fig_PretrainedBalanced_races_60.png" width='70%'></center>
 
@@ -156,12 +154,12 @@ Augmentation OOD-Scores
 <center><img src="./image/../results/distribution_augmentation.png" width='70%'></center>
 
 
-#### Augmentated Data Training and Testing
+## Augmentated Data Training and Testing
 Similarly, run the ``train.py`` and ``test.py`` to train and test the model on augmentated data.
 ```
 python train.py -datafolder <PATH_TO_DATA_FOLDER> -opt <OPT_METHOD> -train_path <PATH_TO_TRAIN_DATA> -test_path <PATH_TO_TEST_DATA> -model_name <MODEL_NAME> -dataset <DATASET_NAME> -num_epoches <num_epochs> -lr <LEARNING_RATE> -trained_model <PATH_TO_PRETRAINED_MODEL>
 ```
-##### Results
+### Results
 
 <style type="text/css">
 .tg  {border-collapse:collapse;border-spacing:0;}
