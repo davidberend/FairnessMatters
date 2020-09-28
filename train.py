@@ -136,7 +136,7 @@ if __name__=="__main__":
     parser.add_argument('-num_epoches', type=int, help='number of classes', default=100)
     parser.add_argument('-lr', type=float, help='learning rate', default=0.0001)
     parser.add_argument('-pretrain',action='store_true',help='if this is a pretraining procedure')
-    parser.add_argument('-trained_model',type=str,help='The pre-trained model')
+    parser.add_argument('-pretrained_model',type=str,help='The pre-trained model')
     
     args = parser.parse_args()
 
@@ -149,7 +149,7 @@ if __name__=="__main__":
     lr=args.lr
     num_epoches=args.num_epoches
     pretrain=args.pretrain
-    trained_model=args.trained_model
+    trained_model=args.pretrained_model
 
     # Checking the existance of pre-trained model
     if not pretrain:

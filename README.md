@@ -37,16 +37,21 @@ After downloading and unzipping data in the ``./data`` folder, go into ``pre-pro
 ```
 python data_preprocess.py -dir <PATH_TO_DATA> -train_save_path <PATH_TO_TRAIN_DATA> -test_save_path <PATH_TO_TEST_DATA>
 ```
+##### Results
+After balancing, the dataset has the following distribution:
+<img src="results/CHECKFIXDATASET_distribution.svg">
+
 #### Training and Testing
 When data is ready, run the ``train.py`` file to train the model and use the ``test.py`` file to test the model.
 
-#### Data Augmentation and OOD_retrival
-After training, run the file ``data_augmentation.py`` to do the augmentation and OOD selecting to get augmentated data.
+```
+python train.py -datafolder <PATH_TO_DATA_FOLDER> -opt <OPT_METHOD> -train_path <PATH_TO_TRAIN_DATA> -test_path <PATH_TO_TEST_DATA> -model_name <MODEL_NAME> -dataset <DATASET_NAME> -num_epoches <num_epochs> -lr <LEARNING_RATE> -pretrained_model <PATH_TO_PRETRAINED_MODEL>
+```
 
-#### Augmentated Data Training and Testing
-Similarly, run the ``train.py`` and ``test.py`` to train and test the model on augmentated data.
-
-## Results
+```
+python test.py -test_path <PATH_TO_TEST_DATA> -result_folder <PATH_TO_SAVE_RESULTS> -trained_model <PATH_TO_TRAINED_MODEL> 
+```
+##### Results
 Comparison of enhancement approach to SOTA and human perception:
 <img src="./results/Analysis_comp_perception.png">
 
@@ -74,13 +79,6 @@ Ethnicity specific perception on SOTA
     <td>Ours</td>
   </tr>
 </table>
-
-
-OOD-Scores for Banalced DNN model:
-<center><img src="./results/fig_PretrainedBalanced_races_60.png" width='70%'></center>
-
-Augmentation OOD-Scores
-<center><img src="./image/../results/distribution_augmentation.png" width='70%'></center>
 
 Balanced testset evaluation on SOTA
 <table>
@@ -142,4 +140,96 @@ Balanced testset evaluation on SOTA
         <td>0.67</td>
         <td>0.89 </td>
     </tr>
+</table>
+
+#### Data Augmentation and OOD_retrival
+After training, runing the file ``data_augmentation.py`` to do the augmentation and OOD selecting to get augmentated data.
+
+```
+python data_augmentation -train_path <PATH_TO_TRAINING_DATA> -model_path <PATH_TO_TRAINED_MODEL> -in_path <PATH_TO_IN_DISTRIBUTION_DATA> -out_path <PATH_TO_OUT_OF_DISTRIBUTION_DATA> -batch_size <BATCH_SIZE> -quantile <QUANTILE_TO_SPLIT_DATA> -save_path <PATH_TO_SAVE_BALANCED_AUG_DATA> -aug_save_path <PATH_TO_SAVE_AUG_DATA>
+```
+##### Results
+OOD-Scores for Banalced DNN model:
+<center><img src="./results/fig_PretrainedBalanced_races_60.png" width='70%'></center>
+
+Augmentation OOD-Scores
+<center><img src="./image/../results/distribution_augmentation.png" width='70%'></center>
+
+
+#### Augmentated Data Training and Testing
+Similarly, run the ``train.py`` and ``test.py`` to train and test the model on augmentated data.
+```
+python train.py -datafolder <PATH_TO_DATA_FOLDER> -opt <OPT_METHOD> -train_path <PATH_TO_TRAIN_DATA> -test_path <PATH_TO_TEST_DATA> -model_name <MODEL_NAME> -dataset <DATASET_NAME> -num_epoches <num_epochs> -lr <LEARNING_RATE> -trained_model <PATH_TO_PRETRAINED_MODEL>
+```
+##### Results
+
+<style type="text/css">
+.tg  {border-collapse:collapse;border-spacing:0;}
+.tg td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+  overflow:hidden;padding:10px 5px;word-break:normal;}
+.tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:14px;
+  font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
+.tg .tg-pb0m{border-color:inherit;text-align:center;vertical-align:bottom}
+.tg .tg-bobw{font-weight:bold;text-align:center;vertical-align:bottom}
+.tg .tg-c3ow{border-color:inherit;text-align:center;vertical-align:top}
+.tg .tg-fll5{border-color:inherit;font-weight:bold;text-align:center;vertical-align:bottom}
+.tg .tg-8d8j{text-align:center;vertical-align:bottom}
+.tg .tg-amwm{font-weight:bold;text-align:center;vertical-align:top}
+</style>
+<table class="tg">
+<thead>
+  <tr>
+    <th class="tg-pb0m" rowspan="3"><span style="font-weight:bold">Testing Criteria</span></th>
+    <th class="tg-fll5"><span style="font-weight:bold">Original</span></th>
+    <th class="tg-bobw" colspan="2"><span style="font-weight:bold">Baseline</span></th>
+    <th class="tg-bobw" colspan="2"><span style="font-weight:bold">Unrealistic Filter</span></th>
+    <th class="tg-bobw" colspan="2"><span style="font-weight:bold">+ Similar Filter</span></th>
+  </tr>
+  <tr>
+    <td class="tg-c3ow" rowspan="2">No Augment</td>
+    <td class="tg-8d8j" colspan="2">OOD Area: 0-1</td>
+    <td class="tg-8d8j" colspan="2">OOD Area: 0.03-1</td>
+    <td class="tg-8d8j" colspan="2">OOD Area: 0.05-0.2</td>
+  </tr>
+  <tr>
+    <td class="tg-8d8j">AutoAug</td>
+    <td class="tg-8d8j">StandAug</td>
+    <td class="tg-8d8j">AutoAug</td>
+    <td class="tg-8d8j">StandAug</td>
+    <td class="tg-8d8j">AutoAug</td>
+    <td class="tg-8d8j">StandAug</td>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td class="tg-amwm"><span style="font-weight:bold;font-style:normal">Performance</span></td>
+    <td class="tg-8d8j">3.39</td>
+    <td class="tg-8d8j">3.62</td>
+    <td class="tg-bobw"><span style="font-weight:bold">3.64</span></td>
+    <td class="tg-8d8j">3.66</td>
+    <td class="tg-8d8j">3.7</td>
+    <td class="tg-8d8j">3.64</td>
+    <td class="tg-8d8j">3.74</td>
+  </tr>
+  <tr>
+    <td class="tg-amwm"><span style="font-weight:bold;font-style:normal">Fairness</span><span style="font-style:normal">Fairness </span></td>
+    <td class="tg-8d8j">0.88</td>
+    <td class="tg-8d8j">0.85</td>
+    <td class="tg-8d8j">0.81</td>
+    <td class="tg-bobw"><span style="font-weight:bold">0.87</span></td>
+    <td class="tg-8d8j">0.79</td>
+    <td class="tg-8d8j">0.85</td>
+    <td class="tg-8d8j">0.8</td>
+  </tr>
+  <tr>
+    <td class="tg-amwm"><span style="font-weight:bold;font-style:normal">Generalization</span></td>
+    <td class="tg-8d8j">7.55</td>
+    <td class="tg-8d8j">6.84</td>
+    <td class="tg-8d8j">6.93</td>
+    <td class="tg-8d8j">6.57</td>
+    <td class="tg-8d8j">6.55</td>
+    <td class="tg-8d8j">6.57</td>
+    <td class="tg-bobw"><span style="font-weight:bold">6.29</span></td>
+  </tr>
+</tbody>
 </table>

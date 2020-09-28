@@ -17,7 +17,7 @@ from ood.OOD_techniques.glod import retrieve_scores, ConvertToGlod, calc_gaussia
 from models.Generalmodels import create_Resnet
 from utils.OOD_utils import visualize_distribution, convert, convert_and_get_scores, split_data
 from utils.data_utils import get_min_max_sample, update
-# from autoaugment import ImageNetPolicy
+from utils.autoaugment import ImageNetPolicy
 
 races = ['caucasian','afroamerican','asian']
 
@@ -41,7 +41,7 @@ def random_augmentation(im, brightness=0, contrast=0, saturation=0, hue=0,
                              ])
     return transform(im)
 
-def batch_augmentation(race,age,aug_ratio, total_data, aug_data):
+def batch_augmentation(race,age,aug_ratio, total_data, aug_data, autoaugment=False):
 
     # ---------------------
     # RANDOM SETTINGS
@@ -63,24 +63,26 @@ def batch_augmentation(race,age,aug_ratio, total_data, aug_data):
             img = Image.open(sample[0])
             if img.mode=='L':
                 img=img.convert("RGB")
-            # policy = ImageNetPolicy()
-            # img = policy(img)
-            img=random_augmentation(img,
-            brightness=brightness,
-            contrast=contrast,
-            saturation=saturation,
-            hue=hue, erase_p=0.0,
-            degrees=degrees,
-            translate=translate,
-            scale=scale,
-            shear=shear,
-            fillcolor=fillcolor,
-            h_flip=h_flip)
+            if autoaugment:
+                policy = ImageNetPolicy()
+                img = policy(img)
+            else:
+                img=random_augmentation(img,
+                brightness=brightness,
+                contrast=contrast,
+                saturation=saturation,
+                hue=hue, erase_p=0.0,
+                degrees=degrees,
+                translate=translate,
+                scale=scale,
+                shear=shear,
+                fillcolor=fillcolor,
+                h_flip=h_flip)
             # img.save(sample[0]+'aug_{}.jpg'.format(i))
             # aug_datas.append([sample[0]+'aug_{}.jpg'.format(i),sample[1],sample[2],sample[3]])
             aug_data.write('{}\t{}\t{}\t{}\n'.format(sample[0]+'aug_{}.jpg'.format(i),sample[1],sample[2],sample[3]))
 
-def data_augmentation(data_path, aug_data_path):
+def data_augmentation(data_path, aug_data_path,autoaugment):
     races = ['caucasian','afroamerican','asian']
     ## Loading data
     f=open(data_path,'r')
@@ -117,7 +119,7 @@ def data_augmentation(data_path, aug_data_path):
             if num==0:continue
             aug_ratio = math.ceil(max_num/num)
             aug_ratio = min(aug_ratio,max_ratio)
-            batch_augmentation(race,age, aug_ratio, total_data, aug_data_file)
+            batch_augmentation(race,age, aug_ratio, total_data, aug_data_file, autoaugment)
     aug_data_file.close()
     return 
 
@@ -220,8 +222,9 @@ if __name__=="__main__":
     parser.add_argument('-glod_k', type=int, help='glod_k value', default=100)
     parser.add_argument('-quantile', type=int, help='quantile', default=0.05)
     parser.add_argument('-num_classes', type=int, help='number of calss', default=100)
-    parser.add_argument('-save_path', type=str, help='number of calss', default='./data/augmented/balanced_aug_data.tsv')
-    parser.add_argument('-aug_save_path', type=str, help='number of calss', default='./data/original/train_aug_ori.tsv')
+    parser.add_argument('-save_path', type=str, help='path to save balanced aug data', default='./data/augmented/balanced_aug_data.tsv')
+    parser.add_argument('-aug_save_path', type=str, help='path to save aug data', default='./data/original/train_aug_ori.tsv')
+    parser.add_argument('-autoaugment', type='store_true', help='if using auto augment', default='./data/original/train_aug_ori.tsv')
     
     
     args = parser.parse_args()
@@ -236,8 +239,9 @@ if __name__=="__main__":
     num_classes = args.num_classes
     selected_aug_save_path = args.save_path
     aug_save_path = args.aug_save_path
+    autoaugment = args.autoaugment
     
-    data_augmentation(train_path,aug_save_path)
+    data_augmentation(train_path,aug_save_path,autoaugment)
 
     ConvertAndGetscores(train_path, batch_size, weight_path, num_classes, glod_k = glod_k, quantile=quantile)
     balancing_augmented_data(aug_save_path,train_path,selected_aug_save_path)

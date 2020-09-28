@@ -95,8 +95,7 @@ if __name__=="__main__":
 
     parser.add_argument('-test_path', help='base folder',default='datasets')
     parser.add_argument('-test_split', help='if test split', type=int,default=1)
-    parser.add_argument('-save_path', help='test results to be stored', default='test_results')
-    parser.add_argument('-model_folder', help='test results to be stored', default='model_weights_new')
+    parser.add_argument('-result_folder', help='test results to be stored', default='test_results')
     parser.add_argument('-pretrain',action='store_true',help='if this is a pretraining procedure')
     parser.add_argument('-trained_model',type=str,help='The pre-trained model')
     
@@ -105,7 +104,7 @@ if __name__=="__main__":
     test_path=args.test_path
     test_split=True if args.test_split!=0 else False
     testdataset=test_path.split('/')[-1].split('_')[0]
-    save_path=args.save_path
+    save_path=args.result_folder
     save_path=os.path.join(save_path,test_path.split('/')[-2])
     trained_model=args.trained_model
     pretrain=args.pretrain
