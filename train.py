@@ -44,7 +44,7 @@ def train_model(train_path, test_path, batch_size=256, model_name = "resnet", op
         train_set_X,train_set_y,num_classes=data_utils.process_data(train_path)
         save_path = "./model_weights/pretrained/{}_{}_{}".format(model_name,opt,str(lr))
     else:
-        num_classes=100
+        num_classes=101
         save_path = "./model_weights/{}_{}_{}_{}".format(model_name,dataset,opt,str(lr))
     model_type = "{}_{}".format(model_name, dataset)
     print('Using Data: ',train_path)
@@ -127,7 +127,7 @@ if __name__=="__main__":
 
     parser = argparse.ArgumentParser(description='control experiment')
 
-    parser.add_argument('-datafolder', help='data folder',default='./data')
+    parser.add_argument('-datafolder', help='data folder',default='./data/original')
     parser.add_argument('-train_path', help='training samples', default='train.tsv')
     parser.add_argument('-test_path', help='test samples', default='test.tsv')
     parser.add_argument('-model_name', help='model to be trained', default='resnet50')

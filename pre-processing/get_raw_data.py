@@ -55,14 +55,18 @@ def getUTKdata(folder):
         information=image.split('_')
         if len(information[2])!=1:
             continue
-        allinformation.append(
-            {
-            'image_path':folder+'/UTKFace/'+image,
-            'age':int(information[0]),# first term is age
-            'gender':map_gender[int(information[1])],#second term is gender
-            'race':maps[int(information[2])]#, #third term is race
-            }
-        )
+        try:
+            allinformation.append(
+                {
+                'image_path':folder+'/UTKFace/'+image,
+                'age':int(information[0]),# first term is age
+                'gender':map_gender[int(information[1])],#second term is gender
+                'race':maps[int(information[2])]#, #third term is race
+                })
+        except Exception as e:
+            print(folder+'/UTKFace/'+image)
+            continue
+        
     return allinformation
 
 def getMORPHdata(folder):
@@ -98,7 +102,7 @@ def getAPPAdata(folder):
         for i in range(len(labels['file_name'])):
             allinformation.append(
                 {
-                'image_path':folder+'/appa/{}/'.format(subsets)+labels['file_name'][i]+'_face.jpg',
+                'image_path':folder+'/appa/{}/'.format(subsets)+labels['file_name'][i],
                 'age':int(labels['real_age'][i]),
                 'gender':catelabels[labels['file_name'][i]]['gender'],
                 'race':catelabels[labels['file_name'][i]]['race']#, #third term is race

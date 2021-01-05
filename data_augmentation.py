@@ -211,7 +211,7 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser(description='control experiment')
 
     parser.add_argument('-train_path', help='The dataset which used to train the original age prediction model',
-                        default='data/original/train.tsv')
+                        default='/home/david/aibias/utils/all_data_train.txt')
     parser.add_argument('-model_path', help='The path of the trained age prediction model',
                         default = '/home/david/aibias/model_weights/regression/both_resnet50_FineTuneData_adam_0.0001_100/resnet50_FineTuneData_epoch_122_0.3150045821877864.pt')
     parser.add_argument('-in_path', help='In distribution dataset',
@@ -223,8 +223,8 @@ if __name__=="__main__":
     parser.add_argument('-quantile', type=int, help='quantile', default=0.05)
     parser.add_argument('-num_classes', type=int, help='number of calss', default=100)
     parser.add_argument('-save_path', type=str, help='path to save balanced aug data', default='./data/augmented/balanced_aug_data.tsv')
-    parser.add_argument('-aug_save_path', type=str, help='path to save aug data', default='./data/original/train_aug_ori.tsv')
-    parser.add_argument('-autoaugment', type='store_true', help='if using auto augment', default='./data/original/train_aug_ori.tsv')
+    parser.add_argument('-aug_save_path', type=str, help='path to save aug data', default='./data/original/train_aug_new.tsv')
+    parser.add_argument('-autoaugment', action='store_true', help='if using auto augment')
     
     
     args = parser.parse_args()
@@ -243,5 +243,5 @@ if __name__=="__main__":
     
     data_augmentation(train_path,aug_save_path,autoaugment)
 
-    ConvertAndGetscores(train_path, batch_size, weight_path, num_classes, glod_k = glod_k, quantile=quantile)
-    balancing_augmented_data(aug_save_path,train_path,selected_aug_save_path)
+    # ConvertAndGetscores(train_path, batch_size, weight_path, num_classes, glod_k = glod_k, quantile=quantile)
+    # balancing_augmented_data(aug_save_path,train_path,selected_aug_save_path)

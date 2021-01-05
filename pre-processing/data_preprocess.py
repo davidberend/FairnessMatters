@@ -17,7 +17,14 @@ import sys
 sys.path.append('../')
 print(sys.path)
 from get_raw_data import getUTKdata, getMORPHdata, getAPPAdata, getMegaasianData, getFGNETdata, getIMDB, getWIKI
-from utils.data_utils import getMinMaxSample, update
+from utils.data_utils import get_min_max_sample, update
+
+def flip_image(image_path):
+    im = Image.open(image_path)
+    im_flipped = im.transpose(method=Image.FLIP_LEFT_RIGHT)
+    save_path = image_path+'_flip.jpg'
+    im_flipped.save(save_path,'JPEG')
+    return save_path
 
 def get_balanced_data(data_folder, train_save_path='../data/train.tsv' , test_save_path='../data/test.tsv'):
     dataset_names = ['UTKdata','Megaasian','APPA','MORPH']
@@ -37,7 +44,7 @@ def get_balanced_data(data_folder, train_save_path='../data/train.tsv' , test_sa
         race:{i:0 for i in dataset_names} for race in races
     }
     dataset_samples = {
-        i:copy.deepcopy(num_samples_tmp) for i in range(1,101)
+        i:copy.deepcopy(num_samples_tmp) for i in range(0,101)
     }
 
     # Store the samples, organized by dataset->race->age
@@ -52,14 +59,26 @@ def get_balanced_data(data_folder, train_save_path='../data/train.tsv' , test_sa
     # Number of samples for each ethnicity in each age
     # For getting the max, min and threshold
     num_sample = {
-        race:{i:0 for i in range(1,101)} for race in races
+        race:{i:0 for i in range(0,101)} for race in races
     }
 
     # Store and organize the original data from the raw data
     for dataset in all_datasets:
         for samples in tqdm(all_datasets[dataset]):
-            if 1<=samples['age']<=100 and samples['race'] in ['caucasian','afroamerican','asian']:
-                all_samples[dataset][samples['race']][samples['age']].append([samples['image_path'],samples['race'],samples['age']-1])
+            if 0<=samples['age']<=100 and samples['race'] in ['caucasian','afroamerican','asian']:
+                file_path = samples['image_path'].replace('OriDatasets','AliDatasets')
+                if not os.path.exists(file_path):
+                    print(file_path)
+                    continue
+                all_samples[dataset][samples['race']][samples['age']].append([file_path,samples['race'],samples['age']])
+                dataset_samples[samples['age']][samples['race']][dataset]+=1
+                num_sample[samples['race']][samples['age']]+=1
+                try:
+                    save_path = flip_image(file_path)
+                except Exception as e:
+                    print(file_path,e)
+                    continue
+                all_samples[dataset][samples['race']][samples['age']].append([save_path,samples['race'],samples['age']])
                 dataset_samples[samples['age']][samples['race']][dataset]+=1
                 num_sample[samples['race']][samples['age']]+=1
 
@@ -68,13 +87,13 @@ def get_balanced_data(data_folder, train_save_path='../data/train.tsv' , test_sa
         samples = copy.deepcopy(num_sample[key])
         num_sample[key] = dict(sorted(samples.items(), key=lambda samples:samples[1]))
 
-    min_sample , max_sample = getMinMaxSample(num_sample)
+    min_sample , max_sample = get_min_max_sample(num_sample)
 
     # Store the train data and test data
     balanced_train_data = []  
     balanced_test_data = []
     train_data_num = {
-        race:{i:0 for i in range(1,101)} for race in races
+        race:{i:0 for i in range(0,101)} for race in races
     }
 
     for age in range(1,101):
@@ -153,9 +172,9 @@ def get_separate_data(file_path):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-dir', type=str, default='/mnt/nvme/aibias/OriDatasets/')
-    parser.add_argument('-train_save_path', type=str, default='../data/original/train.tsv')
-    parser.add_argument('-test_save_path', type=str, default='../data/original/test.tsv')
+    parser.add_argument('-dir', type=str, default='/mnt/nvme/aibias/OriDatasets')
+    parser.add_argument('-train_save_path', type=str, default='../data/original/train_new.tsv')
+    parser.add_argument('-test_save_path', type=str, default='../data/original/test_new.tsv')
     args = parser.parse_args()
     data_folder = args.dir
     train_save_path = args.train_save_path
