@@ -66,9 +66,9 @@ def get_balanced_data(data_folder, train_save_path='../data/train.tsv' , test_sa
     for dataset in all_datasets:
         for samples in tqdm(all_datasets[dataset]):
             if 0<=samples['age']<=100 and samples['race'] in ['caucasian','afroamerican','asian']:
-                file_path = samples['image_path'].replace('OriDatasets','AliDatasets')
+                file_path = samples['image_path'].replace('OriDatasets','AliDatasets_new')
                 if not os.path.exists(file_path):
-                    print(file_path)
+                    # print(file_path)
                     continue
                 all_samples[dataset][samples['race']][samples['age']].append([file_path,samples['race'],samples['age']])
                 dataset_samples[samples['age']][samples['race']][dataset]+=1
@@ -158,15 +158,18 @@ def get_balanced_data(data_folder, train_save_path='../data/train.tsv' , test_sa
 
 def get_separate_data(file_path):
     f=open(file_path,'r')
+    test_train = file_path.split('/')[-1].split('_')[0]
     folder = '/'.join(file_path.split('/')[:-1])
     lines=f.readlines()
-    races=defaultdict(list)
+    goals=defaultdict(list)
     for line in lines:
-        race=line.strip().split('\t')[1]
-        races[race].append(line)
-    for keys in races:
-        f=open('{}/{}_test.tsv'.format(folder,keys),'w')
-        for i in races[keys]:
+        goal=line.strip().split('\t')[0].split('/')[5]
+        # print(goal)
+        goals[goal].append(line)
+
+    for keys in goals:
+        f=open('{}/{}_{}.tsv'.format(folder,keys,test_train),'w')
+        for i in goals[keys]:
             f.write(i)
 
 if __name__ == '__main__':
@@ -179,5 +182,6 @@ if __name__ == '__main__':
     data_folder = args.dir
     train_save_path = args.train_save_path
     test_save_path = args.test_save_path
-    get_balanced_data(data_folder, train_save_path, test_save_path)
+    # get_balanced_data(data_folder, train_save_path, test_save_path)
+    get_separate_data(train_save_path)
     get_separate_data(test_save_path)

@@ -18,7 +18,7 @@ import torch
 import os
 import torch.nn as nn
 
-def train_model(train_path, test_path, batch_size=256, model_name = "resnet", opt="sgd",dataset="UTK",num_epochs=100,lr=0.01,
+def train_model(train_path, test_path, batch_size=128, model_name = "resnet", opt="sgd",dataset="UTK",num_epochs=100,lr=0.01,
                 pretrain=False,trained_model=None):
     # Configuration
     state = defaultdict()
@@ -62,25 +62,26 @@ def train_model(train_path, test_path, batch_size=256, model_name = "resnet", op
     
     device=torch.device("cuda")
     net=net.to(device)
-
+    
     # Defining opt method
     if opt == 'sgd':
         optimizer = optim.SGD(net.parameters(), lr=lr, momentum=0.9, weight_decay=5e-4)
     elif opt == 'adam':
         optimizer = optim.Adam(net.parameters(), lr=lr,weight_decay=5e-4)
-        
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
     # Create results saving path
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     if not os.path.isdir(save_path):
         raise Exception('%s is not a dir' % save_path)
     with open(os.path.join(save_path,  '{}_training_results.csv'.format(model_type)), 'w') as f:
-        f.write('epoch,time(s),train_loss,train_acc,test_loss,test_acc(%),test_mae\n')
+        f.write('epoch,time(s),train_loss,train_acc,train_mae,test_loss,test_acc(%),test_mae\n')
     print('Beginning Training for {} on {}\n'.format(model_name,dataset))
 
     # Main loop
     best_epoch = 0
     best_acc = 0.0
+    best_mae = 100.0
     prev_path=' '
     for epoch in range(num_epochs):
         adjust_opt(opt, optimizer, epoch,lr)
@@ -90,27 +91,29 @@ def train_model(train_path, test_path, batch_size=256, model_name = "resnet", op
         # Train and Test
         train_baseline(net,train_loader,optimizer,state)
         test(net,test_loader,state)
+        scheduler.step()
          # Save model
-        cur_acc = state['test_accuracy']
-        if cur_acc > best_acc:
-            cur_save_path = os.path.join(save_path, '{}_epoch_{}_{}.pt'.format(model_type,epoch,cur_acc))
+        cur_mae = state['test_mae']
+        if cur_mae < best_mae:
+            cur_save_path = os.path.join(save_path, '{}_epoch_{}_{}.pt'.format(model_type,epoch,cur_mae))
             torch.save(net.state_dict(),cur_save_path)
             if os.path.exists(prev_path): 
                 os.remove(prev_path)
             prev_path = cur_save_path
             best_epoch = epoch
-            best_acc = cur_acc
+            best_mae = cur_mae
               
         # Save results
         with open(os.path.join(save_path,  '{}_training_results.csv'.format(model_type)), 'a') as f:
-            f.write('%03d,%05d,%0.6f,%0.4f,%0.6f,%0.4f,%0.4f\n' % (
+            f.write('%03d,%05d,%0.6f,%0.4f,%0.4f,%0.6f,%0.4f,%0.4f\n' % (
                 (epoch + 1),
                 time.time() - begin_epoch,
                 state['train_loss'],
                 state['train_accuracy'],
+                state['train_mae'],
                 state['test_loss'],
                 state['test_accuracy'],
-                state['mae']
+                state['test_mae']
             ))
 
         # Print results 
@@ -150,6 +153,7 @@ if __name__=="__main__":
     num_epoches=args.num_epoches
     pretrain=args.pretrain
     trained_model=args.pretrained_model
+    dataset = args.train_path.split('_')[0]
 
     # Checking the existance of pre-trained model
     if not pretrain:

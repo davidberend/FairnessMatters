@@ -16,7 +16,6 @@ from PIL import Image
 def test_model(test_path,model_name,trained_model,save_path,traineddataset,testdataset,opt,lr,pretrain,num_classes,test_split=False):
     state = defaultdict()
     test_loader=defaultdict()
-    train_loader=defaultdict()
     test_transform = trn.Compose([trn.ToTensor(),trn.Normalize([0.566,0.496,0.469], [0.266,0.256,0.258])])
     img_pixels=(224,224)
 
@@ -97,7 +96,7 @@ if __name__=="__main__":
     parser.add_argument('-test_split', help='if test split', type=int,default=1)
     parser.add_argument('-result_folder', help='test results to be stored', default='test_results')
     parser.add_argument('-pretrain',action='store_true',help='if this is a pretraining procedure')
-    parser.add_argument('-trained_model',type=str,help='The pre-trained model')
+    parser.add_argument('-trained_model',type=str,help='The trained model')
     
     args = parser.parse_args()
 
@@ -124,4 +123,4 @@ if __name__=="__main__":
     if not model_path:
         raise IOError('model does not exist!!')
     
-    test_model(test_path,model_name,model_path,save_path,traineddataset,testdataset,opt,lr,pretrain,num_classes=100,test_split=test_split)
+    test_model(test_path,model_name,model_path,save_path,traineddataset,testdataset,opt,lr,pretrain,num_classes=101,test_split=test_split)
