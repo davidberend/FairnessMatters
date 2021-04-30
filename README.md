@@ -2,7 +2,7 @@ This is the official repository to our paper "Out-of-distribution detection and 
 
 ## Basic Overview
 
-<p align="center"><img src="./results/Paper_Workflow-3.png"></p>
+<p align="center"><img src="./results/Paper_Workflow.png"></p>
 
 <br>
 
@@ -16,7 +16,8 @@ These datasets are downloaded or purchased via the following links:
 - MORPH-2: https://ebill.uncw.edu/C20231_ustores/web/product_detail.jsp?PRODUCTID=8 (Needs to be purchased)
 - MegaAge-Asian: http://mmlab.ie.cuhk.edu.hk/projects/MegaAge/
 - APPA-REAL: http://chalearnlap.cvc.uab.es/dataset/26/description/
-- FG-NET: https://yanweifu.github.io/FG_NET_data/
+- The Asian Face Age Dataset (AFAD): https://afad-dataset.github.io/
+- Cross-Age Celebrity Dataset (CACD): https://bcsiriuschen.github.io/CARC/
 After downloading these datasets, they are required to be moved to the ``./data`` folder extracted to their corresponding folders.
 
 <br>
@@ -29,7 +30,7 @@ python data_preprocess.py -dir <PATH_TO_DATA> -train_save_path <PATH_TO_TRAIN_DA
 ```
 ### Results
 After balancing, the dataset has the following distribution:
-<img src="results/CHECKFIXDATASET_distribution.svg">
+<img src="results/Balanced_distribution.png">
 
 ## Training and Testing
 When data is ready, run the ``train.py`` file to train the model and use the ``test.py`` file to test the model.
@@ -49,11 +50,11 @@ After training, runing the file ``data_augmentation.py`` to do the augmentation 
 python data_augmentation -train_path <PATH_TO_TRAINING_DATA> -model_path <PATH_TO_TRAINED_MODEL> -in_path <PATH_TO_IN_DISTRIBUTION_DATA> -out_path <PATH_TO_OUT_OF_DISTRIBUTION_DATA> -batch_size <BATCH_SIZE> -quantile <QUANTILE_TO_SPLIT_DATA> -save_path <PATH_TO_SAVE_BALANCED_AUG_DATA> -aug_save_path <PATH_TO_SAVE_AUG_DATA>
 ```
 ### Results
-OOD-Scores for Balanced DNN model:
-<center><img src="./results/fig_PretrainedBalanced_races_60.png" width='70%'></center>
+OOD-Scores comparision for Unbalanced and Balanced DNN model:
+<center><img src="./results/OOD_comparision.png" width='70%'></center>
 
 Augmentation OOD-Scores
-<center><img src="./image/../results/distribution_augmentation.png" width='70%'></center>
+<center><img src="./results/distribution_augmentation.png" width='70%'></center>
 
 
 ## Augmentated Data Training and Testing
