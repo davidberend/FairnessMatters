@@ -1,4 +1,4 @@
-This is the official repository to our paper "Out-of-distribution detection and generalization to enhance fairness in age prediction". Currently available as preprint on https://arxiv.org/abs/2009.05283, by Yushi Cao, David Berend, Palina Tolmach, Guy Amit, Moshe Levy, Yang Liu, Asaf Shabtai, Yuval Elovici.
+This is the official repository to our paper "Fair and accurate age prediction using distribution aware data curation and augmentation" published at the Winter Conference on Applications of Computer Vision 2022 – Hawaii, USA. Available as preprint at https://arxiv.org/abs/2009.05283, by Yushi Cao, David Berend, Palina Tolmach, Guy Amit, Moshe Levy, Yang Liu, Asaf Shabtai, Yuval Elovici.
 
 ## Basic Overview
 
